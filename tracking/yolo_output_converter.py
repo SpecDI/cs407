@@ -39,11 +39,13 @@ def main():
     with open('./yolo_output.json') as json_file:
         yolo_output = json.load(json_file)
 
-    # Iterate through frames and process each frame
-    for i in range(len(yolo_output)):
-        mot_sequence = parse_yolo_frame(i + 1, yolo_output[i])
-        for entry in mot_sequence:
-            print(entry)
+    # Iterate through frames and store them in mot like
+    # txt file
+    with open('./det.txt', 'w') as det_file:
+        for i in range(len(yolo_output)):
+            mot_sequence = parse_yolo_frame(i + 1, yolo_output[i])
+            for entry in mot_sequence:
+                det_file.write(entry + '\n')
 
 
 if __name__ == "__main__":
