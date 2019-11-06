@@ -7,6 +7,7 @@ def parse_yolo_frame(frame_id, yolo_frame):
     ----------
     frame_id     :  int
         The id of the current frame.
+        
     yolo_frame   :  List
         List of dictionary entries for each individual identified in the corresponding frame.
 
