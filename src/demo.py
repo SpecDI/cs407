@@ -166,7 +166,7 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
                     append_str += ' ' + action_map[track.track_id]
                 cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
 
-        with open(coords_path, 'w+') as fp:
+        with open(coords_path, 'w') as fp:
             json.dump(track_map, fp)
 
         for det in detections:
