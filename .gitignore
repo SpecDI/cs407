@@ -3,6 +3,7 @@
 
 # Output files
 output/
+detection.txt
 
 # User defined ignore files
 *.mp4
