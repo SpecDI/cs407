@@ -7,17 +7,20 @@ import json
 from timeit import time
 import warnings
 import sys
+sys.path.append(".")
+
 import cv2
 import numpy as np
 from PIL import Image
-from yolo import YOLO
 
-from deep_sort import preprocessing
-from deep_sort import nn_matching
-from deep_sort.detection import Detection
-from deep_sort.tracker import Tracker
+from object_detection.yolo3.yolo import YOLO
+
+from tracking.deep_sort import preprocessing
+from tracking.deep_sort import nn_matching
+from tracking.deep_sort.detection import Detection
+from tracking.deep_sort.tracker import Tracker
 from tools import generate_detections as gdet
-from deep_sort.detection import Detection as ddet
+from tracking.deep_sort.detection import Detection as ddet
 warnings.filterwarnings('ignore')
 
 import argparse
@@ -70,14 +73,15 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
         action_map = parse_labels_file(labels_file)
     print(action_map)
 
-    # Create results/file_name dir
-    if not os.path.exists('results/' + file_name):
-        os.mkdir('results/' + file_name)
+    # Build directory path
+    frames_dir_path = "output/action_tubes/" + file_name
+    if not os.path.exists(frames_dir_path) and enable_cropping:
+        os.mkdir(frames_dir_path)
 
     # Create coords dir for movie
-    coords_path = 'coords/' + file_name + '.json'
+    coords_path = 'output/tracked_bounding_boxes/' + file_name + '.json'
 
-    output_seq = './output/' + file_name + '.avi'
+    output_seq = 'output/annotated_videos/' + file_name + '.avi'
 
     # Dict of coordinates for each tracked individual
     track_map = dict()
@@ -88,7 +92,7 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
     nms_max_overlap = 1.0
     
    # deep_sort 
-    model_filename = 'model_data/mars-small128.pb'
+    model_filename = 'object_detection/model_data/mars-small128.pb'
     encoder = gdet.create_box_encoder(model_filename,batch_size=1)
     
     metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
@@ -148,8 +152,8 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
                 track_map[track.track_id].append((frame_number, [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]))
 
             # Build directory path
-            frames_dir_path = "results/" + file_name + '/' + str(track.track_id)
-            if not os.path.exists(frames_dir_path):
+            frames_dir_path = "output/action_tubes/" + file_name + '/' + str(track.track_id)
+            if not os.path.exists(frames_dir_path) and enable_cropping:
                 os.mkdir(frames_dir_path)
             # Write frame or annotate frame
             if enable_cropping:
