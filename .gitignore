@@ -1,8 +1,8 @@
 # VS code settings
 .vscode/
 
-# Coords files
-coords/*.json
+# Output files
+output/
 
 # User defined ignore files
 *.mp4

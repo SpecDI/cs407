@@ -15,14 +15,14 @@ from keras import backend as K
 from keras.models import load_model
 from PIL import Image, ImageFont, ImageDraw
 
-from model import yolo_eval
-from utils import letterbox_image
+from object_detection.yolo3.model import yolo_eval
+from object_detection.yolo3.utils import letterbox_image
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = 'model_data/yolo.h5'
-        self.anchors_path = 'model_data/yolo_anchors.txt'
-        self.classes_path = 'model_data/coco_classes.txt'
+        self.model_path = 'object_detection/model_data/yolo.h5'
+        self.anchors_path = 'object_detection/model_data/yolo_anchors.txt'
+        self.classes_path = 'object_detection/model_data/coco_classes.txt'
         self.score = 0.5
         self.iou = 0.5
         self.class_names = self._get_class()
