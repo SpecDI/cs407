@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import glob
 import json
+import shutil
 
 from timeit import time
 import warnings
@@ -75,8 +76,9 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
 
     # Build directory path
     frames_dir_path = "output/action_tubes/" + file_name
-    if not os.path.exists(frames_dir_path) and enable_cropping:
-        os.mkdir(frames_dir_path)
+    if os.path.exists(frames_dir_path):
+        shutil.rmtree(frames_dir_path)
+    os.mkdir(frames_dir_path)
 
     # Create coords dir for movie
     coords_path = 'output/tracked_bounding_boxes/' + file_name + '.json'
