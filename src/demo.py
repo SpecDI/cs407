@@ -62,7 +62,7 @@ def parse_labels_file(labels_file):
 
   return action_map
 
-def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
+def main(yolo, sequence_file, fps_render_rate, writeVideo_flag, labels_file):
     # Compute output file
     file_name = os.path.splitext(os.path.basename(sequence_file))[0] if sequence_file != '0' else '0'
     if sequence_file == '0':
@@ -76,9 +76,10 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
 
     # Build directory path
     frames_dir_path = "output/action_tubes/" + file_name
-    if os.path.exists(frames_dir_path):
-        shutil.rmtree(frames_dir_path)
-    os.mkdir(frames_dir_path)
+    if not writeVideo_flag:
+        if os.path.exists(frames_dir_path):
+            shutil.rmtree(frames_dir_path)
+        os.mkdir(frames_dir_path)
 
     # Create coords dir for movie
     coords_path = 'output/tracked_bounding_boxes/' + file_name + '.json'
@@ -100,8 +101,6 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
     metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
     tracker = Tracker(metric)
 
-    writeVideo_flag = True 
-
     video_capture = cv2.VideoCapture(sequence_file)
 
     if writeVideo_flag:
@@ -110,7 +109,7 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
         h = int(video_capture.get(4))
         fourcc = cv2.VideoWriter_fourcc(*'XVID') #*'MJPG'
         # Build video output handler only if we are not cropping
-        out = cv2.VideoWriter(output_seq, fourcc, fps_render_rate, (w, h)) if not enable_cropping else None
+        out = cv2.VideoWriter(output_seq, fourcc, fps_render_rate, (w, h))
         list_file = open('detection.txt', 'w')
         frame_index = -1 
         
@@ -155,10 +154,10 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
 
             # Build directory path
             frames_dir_path = "output/action_tubes/" + file_name + '/' + str(track.track_id)
-            if not os.path.exists(frames_dir_path) and enable_cropping:
+            if not os.path.exists(frames_dir_path) and not writeVideo_flag:
                 os.mkdir(frames_dir_path)
             # Write frame or annotate frame
-            if enable_cropping:
+            if not writeVideo_flag:
                 cv2.imwrite(frames_dir_path + "/" + str(frame_number) + ".jpg", crop_img)
             else:
                 cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
@@ -173,15 +172,14 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
 
         for det in detections:
             bbox = det.to_tlbr()
-            if not enable_cropping:
+            if writeVideo_flag:
                 cv2.rectangle(frame,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
             
         cv2.imshow('', cv2.resize(frame, (1200, 675)))
         
         if writeVideo_flag:
             # save a frame
-            if not enable_cropping:
-                out.write(frame)
+            out.write(frame)
             frame_index = frame_index + 1
             list_file.write(str(frame_index)+' ')
             if len(boxs) != 0:
@@ -204,4 +202,4 @@ def main(yolo, sequence_file, fps_render_rate, enable_cropping, labels_file):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(YOLO(), args.sequence_file, args.fps, args.enable_cropping, args.labels_file)
+    main(YOLO(), args.sequence_file, args.fps, not args.enable_cropping, args.labels_file)
