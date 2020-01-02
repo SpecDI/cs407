@@ -48,6 +48,11 @@ def parse_args():
     parser.add_argument(
         "--labels_file", help="Path to file containing action labels",
         default = None)
+    parser.add_argument(
+        "--hide_window", help="Flag used to hide the cv2 output window",
+        action = 'store_true',
+        default = False
+    )
     return parser.parse_args()
 
 def parse_labels_file(labels_file):
@@ -64,7 +69,7 @@ def parse_labels_file(labels_file):
 
   return action_map
 
-def main(yolo, sequence_file, fps_render_rate, writeVideo_flag, labels_file):
+def main(yolo, sequence_file, fps_render_rate, writeVideo_flag, labels_file, hide_window):
     # Compute output file
     file_name = os.path.splitext(os.path.basename(sequence_file))[0] if sequence_file != '0' else '0'
     if sequence_file == '0':
@@ -176,8 +181,9 @@ def main(yolo, sequence_file, fps_render_rate, writeVideo_flag, labels_file):
             bbox = det.to_tlbr()
             if writeVideo_flag:
                 cv2.rectangle(frame,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
-            
-        cv2.imshow('', cv2.resize(frame, (1200, 675)))
+        
+        if not hide_window:
+            cv2.imshow('', cv2.resize(frame, (1200, 675)))
         
         if writeVideo_flag:
             # save a frame
@@ -204,4 +210,4 @@ def main(yolo, sequence_file, fps_render_rate, writeVideo_flag, labels_file):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(YOLO(), args.sequence_file, args.fps, not args.enable_cropping, args.labels_file)
+    main(YOLO(), args.sequence_file, args.fps, not args.enable_cropping, args.labels_file, args.hide_window)
