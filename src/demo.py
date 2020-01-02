@@ -8,7 +8,7 @@ import shutil
 from timeit import time
 import warnings
 import sys
-sys.path.append(".")
+sys.path.append("..")
 
 import cv2
 import numpy as np
