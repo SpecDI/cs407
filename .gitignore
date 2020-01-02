@@ -1,6 +1,9 @@
 # VS code settings
 .vscode/
 
+# NFS files
+.nfs*
+
 # Output files
 output/
 detection.txt
