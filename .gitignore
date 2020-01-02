@@ -8,6 +8,9 @@
 output/
 detection.txt
 
+# Input files
+data/**/*.txt
+
 # User defined ignore files
 *.mp4
 *.MP4

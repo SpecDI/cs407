@@ -36,10 +36,8 @@ def process_crops(crops_file):
     return crops
 
 def create_crops(sequence_file, crops):
-    if not os.path.exists('crops'):
-        os.mkdir('crops')
-
-    path = 'crops/' + sequence_file
+    sequence_name = os.path.splitext(os.path.basename(sequence_file))[0]
+    path = 'okutama_video_processing/okutama_action_tubes/' + sequence_name
     if not os.path.exists(path):
         os.mkdir(path)
     video_capture = cv2.VideoCapture(sequence_file)
@@ -66,11 +64,8 @@ def create_crops(sequence_file, crops):
     cv2.destroyAllWindows()
 
 def overlay_video(sequence_file, crops):
-    if not os.path.exists('okutama_output'):
-        os.mkdir('okutama_output')
-
     sequence_name = os.path.splitext(os.path.basename(sequence_file))[0]
-    output_seq = './okutama_output/' + sequence_name + '.avi'
+    output_seq = 'okutama_video_processing/annotated_videos/' + sequence_name + '.avi'
 
     writeVideo_flag = True
     video_capture = cv2.VideoCapture(sequence_file)
