@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
+
 import os
 import glob
 import json
@@ -52,9 +54,8 @@ def bb_intersection_over_union(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def mean_averagePrecision(gen_track_id, ref_track_id, track_map, ref_map):
-  average_precision = 0.0
-  count = 0
+def mean_averagePrecision(gen_track_id, ref_track_id, track_map, ref_map, iou_threshold):
+  track_ious = np.asarray([])
 
   for frame_info in track_map[gen_track_id]:
     frame_number = frame_info[0]
@@ -67,10 +68,23 @@ def mean_averagePrecision(gen_track_id, ref_track_id, track_map, ref_map):
       continue
     
     iou = bb_intersection_over_union(current_gen, current_ref)
-    average_precision += iou
-    count += 1
 
-  return average_precision / count
+    if iou >= iou_threshold:
+      iou = 1
+    else:
+      iou = 0
+
+    track_ious = np.append(track_ious, iou)
+
+  positives = np.count_nonzero(track_ious)
+  ratio = 0
+  count_pos = 0
+  for i in range(len(track_ious)):
+    if track_ious[i] == 1:
+      count_pos += 1
+      ratio += count_pos / (i + 1)
+
+  return 1/positives * ratio
 
 def main(gen_coords, ref_coords, map_file):
   # Load dict of gen coords
@@ -84,6 +98,8 @@ def main(gen_coords, ref_coords, map_file):
   # Load mapping between ids
   # gen id -> ref id
   id_map = load_labelMapping(map_file)
+
+  iou_threshold = 0.5
 
   # Open ref file
   with open(ref_coords, 'r') as fp:
@@ -102,13 +118,13 @@ def main(gen_coords, ref_coords, map_file):
 
       line = fp.readline()
 
-  mAP_score = 0.0
+  recorded_aps = np.asarray([])
   for gen_track_id in id_map:
-    avg_IoU = mean_averagePrecision(gen_track_id, id_map[gen_track_id], track_map, ref_map)
-    print(f'Id {gen_track_id} score: {avg_IoU}')
-    mAP_score += avg_IoU
+    ap = mean_averagePrecision(gen_track_id, id_map[gen_track_id], track_map, ref_map, iou_threshold)
+    print(f"Track {gen_track_id}: {ap}")
+    recorded_aps = np.append(recorded_aps, ap)
 
-  print('Map score: ', mAP_score / len(id_map))
+  print(f"mAP: {np.mean(recorded_aps)}")
 
 if __name__ == '__main__':
     # Parse user provided arguments
