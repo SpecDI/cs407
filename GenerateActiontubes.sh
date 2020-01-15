@@ -1,5 +1,5 @@
 #!/bin/bash
-for video in $(find videos -type f)
+for video in $(find input/videos ! -name "*.md" -type f)
 do
     echo "Processing: " $video
     python3 demo.py --sequence_file=$video --enable_cropping --hide_window
