@@ -17,7 +17,7 @@ ready = False
 
 
 def obtain_action():
-    actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing/Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing'}
+    actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing_Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing', '13':'Unknown'}
 
     for k, v in actions.items():
         print(k + ":" +v)
@@ -26,6 +26,8 @@ def obtain_action():
     while not valid:
         valid = True
         action = input("Insert actions, seperated by &: ")
+        action = action.replace(" ", "")
+        print(action)
         action = action.split("&")
         result = ""
         for a in action:
