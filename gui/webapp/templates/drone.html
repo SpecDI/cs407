@@ -1,0 +1,64 @@
+<!-- <h1> todo page </h1>
+
+<ul>
+  <li> to do A</li>
+  <li> to do B</li>
+</ul>
+
+<form id='formid' enctype="multipart/form-data">
+    <input id='fileid' type='file' name='filename' hidden/>
+    <input id='buttonid' type='button' value='Upload' />
+    <input type='submit' value='Submit' />
+</form> -->
+{% load static %}
+<html>
+    <head>
+        <!-- <script>
+            function setup() {
+                document.getElementById('buttonid').addEventListener('click', openDialog);
+                function openDialog() {
+                    document.getElementById('fileid').click();
+                }
+                document.getElementById('fileid').addEventListener('change', submitForm);
+                function submitForm() {
+                    // document.getElementById('formid').submit();
+                    var file = document.getElementById('fileid').value;
+                    var video = document.getElementById('video');
+                    var source = document.createElement('source');
+                    source.setAttribute('src', file);
+                    source.setAttribute('type', 'video/mp4');
+                    video.appendChild(source);
+                    video.play();
+                }
+            }
+        </script> -->
+    </head>
+    <body >
+
+      <form method="post" enctype="multipart/form-data">
+        {%csrf_token%}
+        <input type="file" name="document">
+        <button type="submit">Upload File</button>
+      </form>
+
+        <!-- <form id='formid' method='post' enctype="multipart/form-data">
+            <input id='fileid' type='file' name='filename' hidden/>
+            <input id='buttonid' type='button' value='Upload MB' />
+            <input type='submit' value='Submit' />
+        </form> -->
+
+        {% if url %}
+
+          <video width="640" height="480" controls>
+            <source src="{{url}}" type="video/mp4">
+
+          </video>
+
+        {% endif %}
+
+
+        <!-- -->
+
+    </body>
+
+</html>
