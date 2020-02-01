@@ -1,8 +1,7 @@
 """
 TODO: 
-- Get fit_generator working - there is something wrong with train_on_batch
 - Change the metric for evaluating multi-action label (maybe use the metric from the paper)
-- What's going wrong?
+- Get tensorboard working.
 
 Image generator
 - Change how we pad frames
@@ -86,27 +85,17 @@ def evaluation():
     #                                                       write_images=True,
     #                                                       embeddings_freq=0)
     # mcp_save = ModelCheckpoint('mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
-
-    batch = train_data.next()
-
-    while batch:
-        model.fit(batch[0], batch[1])
-        batch = train_data.next()
         
-
-
-
-    # model.train_on_batch(batch[0], batch[1])
-    # model.fit_generator(
-    #         train_data,
-    #         steps_per_epoch=11,
-    #         epochs=epochs,
-    #         validation_data=test_data,
-    #         validation_steps=11
-    #         # use_multiprocessing=True,
-    #         # max_queue_size=100,
-    #         # workers=4,
-    #         # callbacks=[tensorboard_callback, mcp_save]
-    #         )
+    model.fit_generator(
+            train_data,
+            steps_per_epoch=11,
+            epochs=epochs,
+            validation_data=test_data,
+            validation_steps=11
+            # use_multiprocessing=True,
+            # max_queue_size=100,
+            # workers=4,
+            # callbacks=[tensorboard_callback, mcp_save]
+            )
 
 evaluation()

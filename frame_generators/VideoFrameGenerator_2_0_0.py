@@ -1046,7 +1046,7 @@ class DirectoryIterator(Iterator):
         for res in results:
             classes, filenames = res
             # Assigns class values for each training example
-            self.classes.append(classes)
+            self.classes.append(np.asarray(classes, dtype=K.floatx()))
             self.filenames += filenames
 
         self.classes = np.asarray(self.classes)
@@ -1117,4 +1117,4 @@ class DirectoryIterator(Iterator):
             batch_y = self.classes[index_array]
         else:
             return batch_x
-        return batch_x, batch_y, ids
+        return batch_x, batch_y
