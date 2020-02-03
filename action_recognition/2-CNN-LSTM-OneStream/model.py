@@ -32,6 +32,7 @@ from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
 from keras.optimizers import SGD, RMSprop
 from keras.callbacks import ModelCheckpoint
 
+from sklearn.metrics import hamming_loss
 
 # Constant variables
 BATCH_SIZE = 32
@@ -39,9 +40,9 @@ FRAME_LENGTH = 83
 FRAME_WIDTH = 40
 FRAME_NUM = 64
 CHANNELS = 3
-CLASSES = 13
+CLASSES = 4
 # Constant paths
-train_path = '../../action-tubes/completed_amaris/'
+train_path = '../../action-tubes/test_completed'
 
 # Constant generators
 datagen = ImageDataGenerator()
@@ -74,7 +75,7 @@ def evaluation():
     kernel_shape = (3, 3)
     pool_shape = (2, 2)
     classes = CLASSES
-    epochs = 20
+    epochs = 2
 
     model = cnn_lstm(input_shape, kernel_shape, pool_shape, classes)
 
@@ -88,14 +89,29 @@ def evaluation():
         
     model.fit_generator(
             train_data,
-            steps_per_epoch=11,
+            steps_per_epoch=3,
             epochs=epochs,
             validation_data=test_data,
-            validation_steps=11
+            validation_steps=3
             # use_multiprocessing=True,
             # max_queue_size=100,
             # workers=4,
             # callbacks=[tensorboard_callback, mcp_save]
             )
+
+    loses = []
+    for i in range(4):
+        x, y = train_data.next()
+        preds = model.predict_on_batch(x)
+        loses.append(compute_hamming_loss(y, preds, 0.4))
+
+    print(f'Total loss: {np.mean(loses)}')
+
+def compute_hamming_loss(y_true, y_pred, tval = 0.5):
+    # Threshold the predictions based on tval
+    y_pred[y_pred < tval] = 0
+    y_pred[y_pred >= tval] = 1
+
+    return hamming_loss(y_true, y_pred)
 
 evaluation()
