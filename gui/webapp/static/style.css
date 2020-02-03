@@ -1,0 +1,185 @@
+#page_title {
+  /* font-size: 200pt; */
+  color: #1A237E;
+  /* font-weight: 800; */
+  font-family: 'Share Tech', sans-serif;
+  font-size: 80pt;
+}
+
+#title_caption {
+  /* font-size: 200pt; */
+  color: #1A237E;
+  /* font-weight: 800; */
+  font-family: 'Share Tech', sans-serif;
+  font-size: 30pt;
+}
+
+.videowrapper{
+  position: relative;
+  /* text-align: center; */
+}
+
+#file-label{
+  position: absolute;
+  z-index: 999;
+  top: 32%;
+  left: 40%;
+  border-radius: 25%
+}
+
+.file-upload{
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+
+.file-upload + label {
+    /* max-width: 80%; */
+    font-size: 10em;
+    /* font-weight: 700; */
+    color: white;
+    /* text-overflow: ellipsis; */
+    /* white-space: nowrap; */
+    cursor: pointer;
+    /* display: inline-block; */
+    /* overflow: hidden; */
+    /* padding: 0.625rem 1.25rem; */
+    padding: 2rem;
+}
+
+.file-upload:focus + label,
+.file-upload + label:hover {
+    /* background-color: red; */
+  background-color: #722040;
+}
+
+.file-upload + label {
+  /* display: none; */
+	cursor: pointer;
+  color: #f1e5e6;
+  /* background-color: #d3394c; */
+  background-color: #B71C1C;
+}
+
+.file-upload:focus + label {
+	outline: 1px dotted #000;
+	outline: -webkit-focus-ring-color auto 5px;
+}
+
+.file-upload + label svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    fill: currentColor;
+    /* margin-top: -0.25em; */
+    /* 4px */
+    /* margin-right: 0.25em; */
+    /* 4px */
+}
+
+body {
+
+	background: #7F7FD5;  /* fallback for old browsers */
+	background: -webkit-linear-gradient(to bottom, #91EAE4, #86A8E7, #7F7FD5);  /* Chrome 10-25, Safari 5.1-6 */
+	background: linear-gradient(to bottom, #91EAE4, #86A8E7, #7F7FD5); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+	height: -webkit-fill-available;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+  padding: 100px !important;
+}
+
+/* input[type=file]{
+    color:transparent;
+} */
+
+
+/* .videowrapper{
+  width: 1000px;
+  position:relative;
+  height: auto;
+} */
+
+/* ----------------------SIDE BAR STUFF ----------------------- */
+
+#sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: -200px;
+    /* top layer */
+    z-index: 9999;
+
+    background: #7386D5;
+    color: #fff;
+
+    transition: all 0.3s;
+
+    /*font-family: 'Poppins', sans-serif !important;*/
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    /* full screen */
+    width: 100vw;
+    height: 100vh;
+    /* transparent black */
+    background: rgba(0, 0, 0, 0.7);
+    /* middle layer, i.e. appears below the sidebar */
+    z-index: 998;
+    opacity: 0;
+    /* animate the transition */
+    transition: all 0.5s ease-in-out;
+}
+
+/* display .overlay when it has the .active class */
+.overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+#sidebarCollapse {
+    width: 35px;
+    height: 35px;
+    position: absolute;
+    /* top right corner of the sidebar */
+    top: 12px;
+    right: 2px;
+    font-size: 25px;
+}
+
+#sidebar.active {
+    /*margin-left: -250px;*/
+    left: 0px;
+}
+
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: #6d7fcc;
+    padding-right: 50px;
+}
+
+#sidebar ul.components {
+    padding: 20px;
+    padding-right: 50px;
+    border-bottom: 1px solid #47748b;
+}
+
+#sidebar ul li a {
+    padding: 10px;
+    font-size: 1.1em;
+    display: block;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    text-decoration: none;
+
+          background: #fff;
+    color: #7386D5 !important;
+}
