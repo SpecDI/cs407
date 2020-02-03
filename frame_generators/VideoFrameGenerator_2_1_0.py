@@ -1108,6 +1108,7 @@ class DirectoryIterator(Iterator):
                     if num_pixels > largest_num_pixels:
                         largest_num_pixels = num_pixels
                         largest_shape = img_size
+                del fname_list
 
             self.target_size = largest_shape
             self.image_shape = largest_shape +(3,)
@@ -1117,25 +1118,39 @@ class DirectoryIterator(Iterator):
                            self.image_shape, dtype=K.floatx())
 
 
-        # Pads each action tube with the last frame.
+        # Pads action tubes that are too short and clips those that are too long.
         for i in range(len(index_array)):
             action_tube_dir = self.filenames[index_array[i]]
-            loop_count = 0
-            frame_count = 0
             fname_list = sorted(os.listdir(os.path.join(self.directory, action_tube_dir)))
-            x = []
-            while frame_count < self.frames_per_step:
-                if frame_count < len(fname_list):
-                    fname = fname_list[frame_count]
-                    img = load_img(os.path.join(os.path.join(self.directory, action_tube_dir), fname),
-                                   grayscale=grayscale,
-                                   target_size=self.target_size)
-                    x = img_to_array(img, data_format=self.data_format)
-                if np.mod(loop_count, self.frame_rate) == 0:
-                    batch_x[i,frame_count] = x
-                    frame_count+=1
-                loop_count+=1
-        
+            num_frames = len(fname_list)
+
+            if num_frames > self.frames_per_step:
+                num_frames = self.frames_per_step
+
+            dups = self.frames_per_step // num_frames
+            remainder = self.frames_per_step % num_frames
+
+            duplicates = np.asarray([dups]*num_frames)
+            duplicates[:remainder] +=1
+
+            s_ind = 0
+            frame_count = 0            
+            for fname in fname_list:
+                img = load_img(os.path.join(os.path.join(self.directory, action_tube_dir), fname),
+                                grayscale=grayscale,
+                                target_size=self.target_size)
+                x = img_to_array(img, data_format=self.data_format)
+                frame_dups = duplicates[frame_count]
+                batch_x[i, s_ind:s_ind + frame_dups] = x
+                s_ind += frame_dups
+                
+                frame_count+=1
+
+                if frame_count == self.frames_per_step:
+                    break
+            
+            del duplicates, fname_list
+                                        
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
