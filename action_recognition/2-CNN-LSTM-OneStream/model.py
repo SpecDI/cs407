@@ -40,10 +40,10 @@ FRAME_LENGTH = 83
 FRAME_WIDTH = 40
 FRAME_NUM = 64
 CHANNELS = 3
-CLASSES = 6
+CLASSES = 13
 # Constant paths
-train_path = '../../action-tubes/test_completed'
-test_path = '../../action-tubes/test_completed'
+train_path = '../../action-tubes/training/all/completed'
+test_path = '../../action-tubes/test'
 
 # Constant generators
 datagen = ImageDataGenerator()
@@ -89,10 +89,10 @@ def evaluation():
         
     model.fit_generator(
             train_data,
-            steps_per_epoch=3,
+            steps_per_epoch=2,
             epochs=epochs,
             validation_data=test_data,
-            validation_steps=3
+            validation_steps=2
             # use_multiprocessing=True,
             # max_queue_size=100,
             # workers=4,
