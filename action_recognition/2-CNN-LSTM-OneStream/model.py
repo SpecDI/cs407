@@ -26,6 +26,7 @@ from VideoFrameGenerator_2_0_0 import ImageDataGenerator
 import tensorflow as tf
 tf.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 # Keras imports
+from tensorflow.python.keras import backend as K
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
@@ -65,7 +66,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     model.add(Dense(classes, kernel_initializer="normal", name='output'))
     model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy'])
+    model.compile(loss="binary_crossentropy", optimizer='adam', metrics=[hamming_loss])
 
     return model
 
@@ -75,7 +76,8 @@ def evaluation():
     kernel_shape = (3, 3)
     pool_shape = (2, 2)
     classes = CLASSES
-    epochs = 2
+    epochs = 20
+    steps = 11
 
     model = cnn_lstm(input_shape, kernel_shape, pool_shape, classes)
 
@@ -89,29 +91,25 @@ def evaluation():
         
     model.fit_generator(
             train_data,
-            steps_per_epoch=2,
+            steps_per_epoch=steps,
             epochs=epochs,
             validation_data=test_data,
-            validation_steps=2
+            validation_steps=steps
             # use_multiprocessing=True,
             # max_queue_size=100,
             # workers=4,
-            # callbacks=[tensorboard_callback, mcp_save]
+            # callbacks'categorical_crossentropy'=[tensorboard_callback, mcp_save]
             )
 
-    loses = []
-    for i in range(test_data.batch_count()):
-        x_test, y_test = test_data.next()
-        preds = model.predict_on_batch(x_test)
-        loses.append(compute_hamming_loss(y_test, preds, 0.4))
+    metrics = model.evaluate_generator(test_data, steps = steps)
+    for i in range(len(metrics)):
+        print(f"{model.metrics_names[i]}: {metrics[i]}")
+    
 
-    print(f'Total loss: {np.mean(loses)}')
+def hamming_loss(y_true, y_pred, tval = 0.4):
+    tmp = K.abs(y_true - y_pred)
+    return K.mean(K.cast(K.greater(tmp, tval), dtype = float))
 
-def compute_hamming_loss(y_true, y_pred, tval = 0.5):
-    # Threshold the predictions based on tval
-    y_pred[y_pred < tval] = 0
-    y_pred[y_pred >= tval] = 1
-
-    return hamming_loss(y_true, y_pred)
+    
 
 evaluation()
