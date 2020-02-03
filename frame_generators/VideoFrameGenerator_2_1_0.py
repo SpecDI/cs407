@@ -295,6 +295,15 @@ def img_to_array(img, data_format=None):
     return x
 
 def get_img_size(path):
+    """Gets the size of an image without loading into memory using
+        PIL.
+    # Arguments
+        path: Path to image file
+    # Returns
+        A tuple for the image size
+    # Raises
+        ImportError: if PIL is not available.
+    """
     if pil_image is None:
         raise ImportError('Could not import PIL.Image. '
                           'The use of `array_to_img` requires PIL.')
