@@ -100,9 +100,8 @@ def evaluation():
             )
 
     loses = []
-    for test_tuple in test_data.next():
-        x_test, y_test = test_tuple[0], test_tuple[1]
-        print(x_test.shape)
+    for i in range(test_data.batch_count()):
+        x_test, y_test = test_data.next()
         preds = model.predict_on_batch(x_test)
         loses.append(compute_hamming_loss(y_test, preds, 0.4))
 
