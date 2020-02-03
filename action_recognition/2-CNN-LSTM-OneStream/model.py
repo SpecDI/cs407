@@ -40,15 +40,15 @@ FRAME_LENGTH = 83
 FRAME_WIDTH = 40
 FRAME_NUM = 64
 CHANNELS = 3
-CLASSES = 4
+CLASSES = 6
 # Constant paths
 train_path = '../../action-tubes/test_completed'
+test_path = '../../action-tubes/test_completed'
 
 # Constant generators
 datagen = ImageDataGenerator()
 train_data=datagen.flow_from_directory(train_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
-test_data=datagen.flow_from_directory(train_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
-
+test_data=datagen.flow_from_directory(test_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
 
 def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model = Sequential()
@@ -100,10 +100,10 @@ def evaluation():
             )
 
     loses = []
-    for i in range(4):
-        x, y = train_data.next()
-        preds = model.predict_on_batch(x)
-        loses.append(compute_hamming_loss(y, preds, 0.4))
+    for i in range(test_data.batch_count()):
+        x_test, y_test = test_data.next()
+        preds = model.predict_on_batch(x_test)
+        loses.append(compute_hamming_loss(y_test, preds, 0.4))
 
     print(f'Total loss: {np.mean(loses)}')
 
