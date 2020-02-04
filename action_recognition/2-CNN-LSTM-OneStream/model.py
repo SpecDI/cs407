@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # import image generator
 import sys
 sys.path.insert(1, '../../frame_generators/')
-from VideoFrameGenerator_2_0_0 import ImageDataGenerator
+from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 # Tensorflow imports
 import tensorflow as tf
 tf.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -77,7 +77,8 @@ def evaluation():
     pool_shape = (2, 2)
     classes = CLASSES
     epochs = 20
-    steps = 11
+    train_steps = train_data.samples // BATCH_SIZE
+    test_steps = test_data.samples // BATCH_SIZE
 
     model = cnn_lstm(input_shape, kernel_shape, pool_shape, classes)
 
@@ -91,17 +92,17 @@ def evaluation():
         
     model.fit_generator(
             train_data,
-            steps_per_epoch=steps,
+            steps_per_epoch=train_steps,
             epochs=epochs,
             validation_data=test_data,
-            validation_steps=steps
+            validation_steps=test_steps
             # use_multiprocessing=True,
             # max_queue_size=100,
             # workers=4,
             # callbacks'categorical_crossentropy'=[tensorboard_callback, mcp_save]
             )
 
-    metrics = model.evaluate_generator(test_data, steps = steps)
+    metrics = model.evaluate_generator(test_data, steps = test_steps)
     for i in range(len(metrics)):
         print(f"{model.metrics_names[i]}: {metrics[i]}")
     
