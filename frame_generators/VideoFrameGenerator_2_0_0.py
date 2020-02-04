@@ -1055,9 +1055,6 @@ class DirectoryIterator(Iterator):
         super(DirectoryIterator, self).__init__(
             self.samples, batch_size, frames_per_step, shuffle, seed)
 
-    def batch_count(self):
-        return math.ceil(self.samples / self.batch_size)
-
     def next(self):
         """For python 2.x.
         # Returns
