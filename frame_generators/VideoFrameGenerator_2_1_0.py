@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-This generator pads action tubes with a frame count < frames_per_step with
-duplicates of the last frame.
+Video Frame Generator with the following features:
+1. Multi-action labelling.
+2. Image resizing according to largest frame in a batch.
+3. Interframe actiontube padding - duplicating frames uniformly in an action tube.
 """
 
 from functools import partial
@@ -292,6 +294,23 @@ def img_to_array(img, data_format=None):
         raise ValueError('Unsupported image shape: ', x.shape)
     return x
 
+def get_img_size(path):
+    """Gets the size of an image without loading into memory using
+        PIL.
+    # Arguments
+        path: Path to image file
+    # Returns
+        A tuple for the image size
+    # Raises
+        ImportError: if PIL is not available.
+    """
+    if pil_image is None:
+        raise ImportError('Could not import PIL.Image. '
+                          'The use of `array_to_img` requires PIL.')
+    img = pil_image.open(path)
+    size = img.size
+    del img
+    return size
 
 def load_img(path, grayscale=False, target_size=None):
     """Loads an image into PIL format.
@@ -315,7 +334,7 @@ def load_img(path, grayscale=False, target_size=None):
     else:
         if img.mode != 'RGB':
             img = img.convert('RGB')
-    if target_size:
+    if target_size != (None, None):
         hw_tuple = (target_size[1], target_size[0])
         if img.size != hw_tuple:
             img = img.resize(hw_tuple)
@@ -967,6 +986,10 @@ class DirectoryIterator(Iterator):
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png',
                  follow_links=False):
+        """
+        This method gets a list of all action tubes and all the corresponding
+        classes from the directory structure.
+        """
         if data_format is None:
             data_format = K.image_data_format()
         self.directory = directory
@@ -1003,8 +1026,7 @@ class DirectoryIterator(Iterator):
 
         white_list_formats = {'png', 'jpg', 'jpeg', 'bmp', 'ppm'}
 
-        # samples stores the action tubes
-        self.samples = 0
+        self.samples = 0    #Number of action tubes
 
         # Gets the class names from the subdirectory names
         if not classes:
@@ -1021,7 +1043,8 @@ class DirectoryIterator(Iterator):
         self.num_class = len(unique_classes)
         self.class_indices = dict(zip(unique_classes, range(len(unique_classes))))
         print(self.class_indices)
-        # Finds all the actions in the sub folders
+
+        # Finds all the action tubes in the class folders
         sum = 0
 
         for subdir in classes:
@@ -1033,7 +1056,7 @@ class DirectoryIterator(Iterator):
         print('Got %d action tubes belonging to %d classes.' %
               (self.samples, self.num_class))
 
-        # 2. [Change] Gets a list of absolute paths to action tubes
+        # Gets a list of absolute paths to action tubes and corresponding class vectors.
         results = []
 
         self.filenames = []
@@ -1045,7 +1068,6 @@ class DirectoryIterator(Iterator):
 
         for res in results:
             classes, filenames = res
-            # Assigns class values for each training example
             self.classes.append(np.asarray(classes, dtype=K.floatx()))
             self.filenames += filenames
 
@@ -1055,46 +1077,80 @@ class DirectoryIterator(Iterator):
             self.samples, batch_size, frames_per_step, shuffle, seed)
 
     def next(self):
-        """For python 2.x.
-        # Returns
-            The next batch.
+        """
+        This method returns the next batch of data.
+        
+        A subset of indices are chosen from the list of all action-tubes.
+        These action tubes are then read into memory. If the target_size
+        of the frames is not set then this is set to the largest frame size
+        of the batch.
+        
+        The list of classes are also indexed by this subset and returned.
         """
         with self.lock:
             index_array, current_index, current_batch_size = next(
                 self.index_generator)
 
-        # build batch of image data
-        batch_x = np.zeros((current_batch_size,)  +(self.frames_per_step,)+
-                           self.image_shape, dtype=K.floatx())   # # my addition of +(1,)
         grayscale = self.color_mode == 'grayscale'
-        ids = [None]*current_batch_size
-        # For each batch index value
+
+        # Finds the largest frame size of the batch.
+        if self.target_size == (None, None):
+            largest_shape = None
+            largest_num_pixels = 0
+
+            for i in range(len(index_array)):
+                action_tube_dir = self.filenames[index_array[i]]
+                fname_list = sorted(os.listdir(os.path.join(self.directory, action_tube_dir)))
+                for fname in fname_list:
+                    img_size = get_img_size(os.path.join(os.path.join(self.directory, action_tube_dir), fname))
+
+                    num_pixels = img_size[0]*img_size[1]
+                    if num_pixels > largest_num_pixels:
+                        largest_num_pixels = num_pixels
+                        largest_shape = img_size
+                del fname_list
+
+            self.target_size = largest_shape
+            self.image_shape = largest_shape +(3,)
+
+
+        batch_x = np.zeros((current_batch_size,)  +(self.frames_per_step,)+
+                           self.image_shape, dtype=K.floatx())
+
+
+        # Pads action tubes that are too short and clips those that are too long.
         for i in range(len(index_array)):
             action_tube_dir = self.filenames[index_array[i]]
-            ids[i] = action_tube_dir
-            loop_count = 0
-            frame_count = 0
-            # get the list of frames for this target.
             fname_list = sorted(os.listdir(os.path.join(self.directory, action_tube_dir)))
-            x = []
-            # While we haven't reached the max frame value
-            while frame_count < self.frames_per_step:
-                # if there are still more frames in the action tube, load them into x.
-                # Otherwise, use the previous frame.
-                if frame_count < len(fname_list):
-                    fname = fname_list[frame_count]
-                    img = load_img(os.path.join(os.path.join(self.directory, action_tube_dir), fname),
-                                   grayscale=grayscale,
-                                   target_size=self.target_size)
-                    x = img_to_array(img, data_format=self.data_format)
-                # else:
-                    # print("not padding, batch index: " + str(i) + "  frame: " + str(frame_count))
+            num_frames = len(fname_list)
 
-                if np.mod(loop_count, self.frame_rate) == 0:
-                    batch_x[i,frame_count] = x
-                    frame_count+=1
-                loop_count+=1
+            if num_frames > self.frames_per_step:
+                num_frames = self.frames_per_step
 
+            dups = self.frames_per_step // num_frames
+            remainder = self.frames_per_step % num_frames
+
+            duplicates = np.asarray([dups]*num_frames)
+            duplicates[:remainder] +=1
+
+            s_ind = 0
+            frame_count = 0            
+            for fname in fname_list:
+                img = load_img(os.path.join(os.path.join(self.directory, action_tube_dir), fname),
+                                grayscale=grayscale,
+                                target_size=self.target_size)
+                x = img_to_array(img, data_format=self.data_format)
+                frame_dups = duplicates[frame_count]
+                batch_x[i, s_ind:s_ind + frame_dups] = x
+                s_ind += frame_dups
+                
+                frame_count+=1
+
+                if frame_count == self.frames_per_step:
+                    break
+            
+            del duplicates, fname_list
+                                        
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
@@ -1106,7 +1162,7 @@ class DirectoryIterator(Iterator):
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         
-        # build batch of labels
+        # Sets the batch labels
         if self.class_mode == 'input':
             batch_y = batch_x.copy()
         elif self.class_mode == 'sparse':
