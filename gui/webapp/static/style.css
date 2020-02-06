@@ -91,6 +91,23 @@ body {
   padding: 100px !important;
 }
 
+
+.symbols{
+  color: white;
+  font-size: 4em;
+  padding: 1em;
+}
+
+.symbols span{
+  color: black;
+  font-family: 'Share Tech', sans-serif;
+  font-size: 0.5em;
+}
+
+.upload:hover{
+  /* color:grey; */
+}
+
 /* input[type=file]{
     color:transparent;
 } */

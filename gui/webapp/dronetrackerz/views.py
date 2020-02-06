@@ -26,7 +26,7 @@ def droneView(request):
         context['url'] = fs.url(video_name) #NEED TO REMOVE LATER
         print("Video URL: ", fs.url(video_name))
 
-        #modify_video(fs.url(video_name))
+        modify_video(fs.url(video_name))
 
         #modify_video('/media/1.1.1.mov')
         #modify_video('1.1.1.mov')

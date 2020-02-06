@@ -8,6 +8,10 @@
 
         <script type="text/javascript" src="//cdn.jsdelivr.net/npm/afterglowplayer@1.x"></script>
 
+        <!-- <link href=”//vjs.zencdn.net/7.0/video-js.min.css” rel=”stylesheet”> -->
+<!-- <script src=”//vjs.zencdn.net/7.0/video.min.js”></script> -->
+<!-- <script src="https://cdn.plyr.io/3.5.6/plyr.polyfilled.js"></script> -->
+<!-- <link rel="stylesheet" href="https://cdn.plyr.io/3.5.6/plyr.css" /> -->
 
         <!-- Font Awesome JS -->
             <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
@@ -64,14 +68,85 @@
               </div>
             </form>
 
+            <!-- Different types of video player -->
+            <!-- <video poster="{% static 'img/drone2.jpg'%}" id="video_player" playsinline controls width="1920" height="1080"> -->
+            <!-- <video id="video_player" class="video_js" controls width="1920" height="1080" poster="{% static 'img/drone2.jpg'%}" data-setup="{}"> -->
 
-            <video class="afterglow" id="video_player" width="1920" height="1080" autoplay="autoplay" poster="{% static 'img/drone2.jpg'%}">
-              <!-- <source src="/static/1.1.1.mov" type="video/mp4"> -->
+            <video class="afterglow" id="video_player" width="1920" height="1080" autoplay="autoplay" poster="{% static 'img/drone3.jpg'%}">
+              <!-- <source src="/static/edited_video4.webm" type="video/webm"> -->
               {% if url %}
-                <source src="{{url}}" type="video/mp4">
+                <!-- <source src="{{url}}" type="video/mp4"> -->
+                <source src="/static/edited_videoWEBMSTATIC.webm" type="video/webm">
               {% endif %}
             </video>
           </div>
+
+          <div class="symbols text-center">
+            <div class="row align-items-start">
+              <div class="col-2 upload" id="upload_icon">
+                <i class="fas fa-upload component"></i>
+              </div>
+
+              <div class="col-1 upload">
+                <i class="fas fa-arrow-right component" ></i>
+              </div>
+
+              <div class="col-2 users" id="user_icon">
+                <i class="fas fa-users component"></i>
+              </div>
+
+              <div class="col-1 users">
+                <i class="fas fa-arrow-right component"></i>
+              </div>
+
+              <div class="col-2 tracking" id="track_icon">
+                <i class="fas fa-th component"></i>
+              </div>
+
+              <div class="col-1 tracking">
+                <i class="fas fa-arrow-right component"></i>
+              </div>
+
+              <div class="col-2 action" id="action_icon">
+                <i class="fas fa-walking component"></i>
+              </div>
+            </div>
+
+            <div class="row align-items-center">
+              <div class="col-2 upload icon-text">
+                <span>Upload Video</span>
+              </div>
+
+              <div class="col-2 offset-1 users icon-text" >
+                <span>People Identifcation</span>
+              </div>
+
+              <div class="col-2 offset-1 tracking icon-text">
+                <span>People Tracking</span>
+              </div>
+
+              <div class="col-2 offset-1 action icon-text">
+                <span>Action Recognition</span>
+              </div>
+
+              <div class="col align-items-center icon-explain">
+
+                <span>Text to explain each component</span>
+                <!--
+                  Upload Your Drone Video To Be Processed
+
+                  Uses YOLO To Detect Each Person In The Frame
+
+                  Uses DeepSort To Link Each Person Between Frames
+
+                  Uses An LSTM To Detect Actions
+                -->
+              </div>
+
+            </div>
+
+          </div>
+
 
           <!-- <div class="overlay"></div> -->
         </div>
