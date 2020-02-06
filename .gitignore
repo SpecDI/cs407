@@ -17,6 +17,7 @@ data/**/*.txt
 *.jpg
 *.MOV
 *.mov
+*.webm
 
 # Keras model weights
 *.h5
@@ -157,3 +158,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# fuck mac
+.DS_Store
