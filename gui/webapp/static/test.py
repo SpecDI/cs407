@@ -27,17 +27,20 @@ def modify_video(video_name):
         #fourcc = cv2.VideoWriter_fourcc(*'MP4V') #python3
         # fourcc = cv2.VideoWriter_fourcc(*'XVID') #python3
 
-        fourcc = cv2.VideoWriter_fourcc(*'vp80') #works - with webm suffix - but extremly slow??? :(
+        #fourcc = cv2.VideoWriter_fourcc(*'vp80') #works - with webm suffix - but extremly slow??? :(
+
+        fourcc = cv2.VideoWriter_fourcc(*'H264') # WORKING ON WINDOWS :D :D
 
         #fourcc = cv2.cv.CV_FOURCC(*'MJPG') #python
 
 
         #out = cv2.VideoWriter('edited_video.avi', fourcc, 20, (w, h)) #.AVI FORM - WORKS BUT CANT DISPLAY
         # out = cv2.VideoWriter('edited_videoMP4.mp5', fourcc, 20.0, (w, h))
-        out = cv2.VideoWriter('static/edited_videoWEBMSTATIC.webm', fourcc, 20.0, (w, h))
+        #out = cv2.VideoWriter('static/edited_videoWEBMSTATIC.webm', fourcc, 20.0, (w, h)) #works but slow
+        out = cv2.VideoWriter('static/edited_videoMP4STATIC.mp4', fourcc, 20.0, (w, h)) # WORKING ON WINDOWS!!!
 
         frame_number = -1
-        while video.isOpened() and (frame_number < 50):
+        while video.isOpened() and (frame_number < 500):
             frame_number+=1
             ret, frame = video.read()
             print(frame_number)
