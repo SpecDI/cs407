@@ -8,6 +8,9 @@
 output/
 detection.txt
 
+# Log files
+/**/logs/**/*
+
 # Input files
 data/**/*.txt
 
