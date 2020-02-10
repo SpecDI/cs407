@@ -21,17 +21,19 @@ import matplotlib.pyplot as plt
 # import image generator
 import sys
 sys.path.insert(1, '../../frame_generators/')
-from VideoFrameGenerator_2_0_0 import ImageDataGenerator
+from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 # Tensorflow imports
 import tensorflow as tf
 tf.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 # Keras imports
+from tensorflow.python.keras import backend as K
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
 from keras.optimizers import SGD, RMSprop
 from keras.callbacks import ModelCheckpoint
 
+from sklearn.metrics import hamming_loss
 
 # Constant variables
 BATCH_SIZE = 32
@@ -41,13 +43,13 @@ FRAME_NUM = 64
 CHANNELS = 3
 CLASSES = 13
 # Constant paths
-train_path = '../../action-tubes/completed_amaris/'
+train_path = '../../action-tubes/training/all/completed'
+test_path = '../../action-tubes/test'
 
 # Constant generators
 datagen = ImageDataGenerator()
 train_data=datagen.flow_from_directory(train_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
-test_data=datagen.flow_from_directory(train_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
-
+test_data=datagen.flow_from_directory(test_path, target_size=(FRAME_LENGTH, FRAME_WIDTH), batch_size=BATCH_SIZE, frames_per_step=FRAME_NUM, shuffle=True)
 
 def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model = Sequential()
@@ -64,7 +66,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     model.add(Dense(classes, kernel_initializer="normal", name='output'))
     model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy'])
+    model.compile(loss="binary_crossentropy", optimizer='adam', metrics=[hamming_loss, 'accuracy'])
 
     return model
 
@@ -74,28 +76,41 @@ def evaluation():
     kernel_shape = (3, 3)
     pool_shape = (2, 2)
     classes = CLASSES
-    epochs = 20
+    epochs = 1
+    train_steps = train_data.samples // BATCH_SIZE
+    test_steps = test_data.samples // BATCH_SIZE
 
     model = cnn_lstm(input_shape, kernel_shape, pool_shape, classes)
 
-    # logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
-    #                                                       histogram_freq=1,
-    #                                                       write_graph=True,
-    #                                                       write_images=True,
-    #                                                       embeddings_freq=0)
-    # mcp_save = ModelCheckpoint('mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
+    logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
+                                                          histogram_freq=1,
+                                                          write_graph=True,
+                                                          write_images=True,
+                                                          embeddings_freq=0)
+    mcp_save = ModelCheckpoint('mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
         
     model.fit_generator(
             train_data,
-            steps_per_epoch=11,
+            steps_per_epoch=train_steps,
             epochs=epochs,
             validation_data=test_data,
-            validation_steps=11
+            validation_steps=test_steps,
             # use_multiprocessing=True,
             # max_queue_size=100,
             # workers=4,
-            # callbacks=[tensorboard_callback, mcp_save]
+            callbacks = [tensorboard_callback, mcp_save]
             )
+
+    metrics = model.evaluate_generator(test_data, steps = test_steps)
+    for i in range(len(metrics)):
+        print(f"{model.metrics_names[i]}: {metrics[i]}")
+    
+
+def hamming_loss(y_true, y_pred, tval = 0.4):
+    tmp = K.abs(y_true - y_pred)
+    return K.mean(K.cast(K.greater(tmp, tval), dtype = float))
+
+    
 
 evaluation()

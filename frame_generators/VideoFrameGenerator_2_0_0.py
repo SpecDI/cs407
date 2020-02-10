@@ -16,6 +16,7 @@ import scipy.ndimage as ndi
 from six.moves import range
 import threading
 import warnings
+import math
 
 try:
     from keras import backend as K
