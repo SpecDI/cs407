@@ -1,47 +1,53 @@
 # import image generator
+import os
 import sys
+from datetime import datetime
 sys.path.insert(1, '../../frame_generators/')
 from VideoFrameGenerator_2_0_0 import ImageDataGenerator
 
 # Tensorflow imports
 import tensorflow as tf
 tf.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-# Constant variables
-FRAME_LENGTH = 83
-FRAME_WIDTH = 40
-FRAME_NUM = 64
-CHANNELS = 3
-CLASSES = 13
+from keras.callbacks import ModelCheckpoint
 
 """
 Python class for training and evaluating keras models.
 """
 class TrainingSuite:
-    def __init__(self, batch_size, epochs, train_dir, test_dir):
+    def __init__(self, batch_size, epochs, train_dir, test_dir, frame_length, frame_width, frame_num):
         self.batch_size = batch_size
         self.epochs = epochs
         self.train_dir = train_dir
         self.test_dir = test_dir
-        self.train_data, self.test_data = self.load_data()
+        self.frame_length = frame_length
+        self.frame_width = frame_width
+        self.frame_num = frame_num
+        self.train_data, self.test_data = self._load_data()
     
-    def load_data(self):
+    def _load_data(self):
         datagen = ImageDataGenerator()
         train_data = datagen.flow_from_directory(self.train_dir,
-                                            target_size=(FRAME_LENGTH, FRAME_WIDTH),
+                                            target_size=(self.frame_length, self.frame_width),
                                             batch_size=self.batch_size,
-                                            frames_per_step=FRAME_NUM, shuffle=True)
+                                            frames_per_step=self.frame_num, shuffle=True)
         test_data = datagen.flow_from_directory(self.test_dir,
-                                            target_size=(FRAME_LENGTH, FRAME_WIDTH),
+                                            target_size=(self.frame_length, self.frame_width),
                                             batch_size=self.batch_size,
-                                            frames_per_step=FRAME_NUM, shuffle=True)  
+                                            frames_per_step=self.frame_num, shuffle=True)  
         return train_data, test_data
 
-    def evaluation(self, model):
+    def evaluation(self, model, weight_file):
+        logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
+                                                          histogram_freq=1,
+                                                          write_graph=True,
+                                                          write_images=True,
+                                                          embeddings_freq=0)
+        mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_loss', mode='min')   
         model.fit_generator(
                 self.train_data,
                 steps_per_epoch=11,
                 epochs=self.epochs,
                 validation_data=self.test_data,
-                validation_steps=11
-                )
+                validation_steps=11,
+                callbacks=[tensorboard_callback, mcp_save])

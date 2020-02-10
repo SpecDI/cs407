@@ -13,6 +13,7 @@ TRAIN_DIR = '../../action-tubes/completed_amaris/'
 TEST_DIR = '../../action-tubes/completed_amaris/'
 
 # Constants to be defined
+WEIGHT_FILE_NAME = "lstm"
 BATCH_SIZE = 32
 EPOCHS = 20
 
@@ -48,7 +49,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     return model
 
-training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR)
+training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
 model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
 
-training_suite.evaluation(model)
+training_suite.evaluation(model, WEIGHT_FILE_NAME)
