@@ -12,7 +12,6 @@ from keras.preprocessing.image import img_to_array, ImageDataGenerator
 import argparse
 
 augmentation_prefix = 'augg'
-augmentation_scaling_cap = 20
 
 def parse_args():
   """ Parse command line arguments.
@@ -73,8 +72,6 @@ def main(mode):
   i = 0
   for action_class in glob(path_tubes + '*/'):
     img_factor = math.ceil((avg_tube_size - tube_counts[i]) / tube_counts[i])
-    if img_factor > augmentation_scaling_cap:
-      img_factor = str(augmentation_scaling_cap) + ' (capped)'
 
     print(f"{os.path.basename(os.path.normpath(action_class))}: {tube_counts[i]} -> {img_factor}")
     i += 1
@@ -88,11 +85,9 @@ def main(mode):
     # Augment classes with less than average
     for action_class in glob(path_tubes + '*/'):
       cnt = sum([len(files) for r, d, files in os.walk(action_class)])
+
       if(cnt < avg_tube_size and os.path.basename(os.path.normpath(action_class)) != 'Unknown'):
         img_factor = math.ceil((avg_tube_size - cnt) / cnt)
-        if img_factor > augmentation_scaling_cap:
-          img_factor = augmentation_scaling_cap
-
         augment_class(action_class, img_factor)
 
 
