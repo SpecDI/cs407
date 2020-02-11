@@ -61,7 +61,7 @@ def augment_class(class_path, img_factor):
 
 def main(mode):
   # Path to action tubes
-  path_tubes = './action-tubes/completed/'
+  path_tubes = './action-tubes/augmentation_dummy/'
   
   # Determine average tubes per class
   tube_counts = []
