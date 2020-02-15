@@ -11,13 +11,19 @@ def parse_args():
     parser.add_argument(
         "--path", help="path to video folder",
         required = True)
+    parser.add_argument(
+        "--mode", help="1 = normal, 2 = sort unknowns",
+        required = True)
     return parser.parse_args()
 
 ready = False
 
 
-def obtain_action():
-    actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing_Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing', '13':'Unknown'}
+def obtain_action(mode):
+    if mode == 1:
+        actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing_Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing', '13':'Unknown'}
+    else:
+        actions = {'1':'Bin', '2':'Needs_splitting'}
 
     for k, v in actions.items():
         print(k + ":" +v)
@@ -39,7 +45,7 @@ def obtain_action():
                 break
     return result[1:]
 
-def main(path):
+def main(path, mode):
     completed_path = "completed"
     if not os.path.exists(completed_path):
         print("Creating: " + completed_path)
@@ -59,7 +65,7 @@ def main(path):
             val = input("Actiontube complete. Replay? y/[n] ")
             if val != "y":
                 ready = True
-        action = obtain_action()
+        action = obtain_action(mode)
         print("Moving " + currentTube + " to " + os.path.join("completed", action, path +"_"+directory))
         
         dest = shutil.move(currentTube, os.path.join("./completed", action, path+"_"+directory))
@@ -67,4 +73,4 @@ def main(path):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(args.path)
+    main(args.path, args.mode)
