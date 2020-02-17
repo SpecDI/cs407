@@ -35,7 +35,7 @@ def main(yolo):
     print('Starting pipeline...')
 
     input_file = './web_server/input.mp4'
-    output_file = './web_server/output.mp4'
+    output_file = './web_server/output.avi'
 
     # Definition of the parameters
     max_cosine_distance = 0.3
@@ -54,7 +54,7 @@ def main(yolo):
     # Define the codec and create VideoWriter object
     w = int(video_capture.get(3))
     h = int(video_capture.get(4))
-    fourcc = cv2.VideoWriter_fourcc(*'XVID') #*'MJPG'
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
     # Build video output handler only if we are not cropping
     out = cv2.VideoWriter(output_file, fourcc, 11, (w, h))
     list_file = open('detection.txt', 'w')
@@ -100,6 +100,8 @@ def main(yolo):
             bbox = det.to_tlbr()
             cv2.rectangle(frame,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
 
+        cv2.imshow('', cv2.resize(frame, (1200, 675)))
+
         # save a frame
         out.write(frame)
         frame_index = frame_index + 1
@@ -113,14 +115,14 @@ def main(yolo):
         fps  = ( fps + (1./(time.time()-t1)) ) / 2
         print("fps= %f"%(fps))
 
+        # Press Q to stop!
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
     video_capture.release()
     out.release()
     list_file.close()
     cv2.destroyAllWindows()
-
-        
-
-        
 
 if __name__ == '__main__':
     # Parse user provided arguments
