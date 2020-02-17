@@ -6,16 +6,16 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
 from keras.callbacks import ModelCheckpoint
-from training import TrainingSuite
+from training import TrainingSuite, hamming_loss
 
 # Paths to be set
-TRAIN_DIR = '../../action-tubes/completed_amaris/'
-TEST_DIR = '../../action-tubes/completed_amaris/'
+TRAIN_DIR = '../../action-tubes/training/all/completed/'
+TEST_DIR = '../../action-tubes/test/'
 
 # Constants to be defined
 WEIGHT_FILE_NAME = "lstm"
 BATCH_SIZE = 32
-EPOCHS = 20
+EPOCHS = 1
 
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
@@ -45,7 +45,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     model.add(Dense(classes, kernel_initializer="normal", name='output'))
     model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy'])
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy', hamming_loss])
 
     return model
 

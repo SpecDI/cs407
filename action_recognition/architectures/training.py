@@ -10,6 +10,8 @@ import tensorflow as tf
 tf.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from keras.callbacks import ModelCheckpoint
 
+from tensorflow.python.keras import backend as K
+
 """
 Python class for training and evaluating keras models.
 """
@@ -50,4 +52,8 @@ class TrainingSuite:
                 epochs=self.epochs,
                 validation_data=self.test_data,
                 validation_steps=11,
-                callbacks=[tensorboard_callback, mcp_save])
+                callbacks=[mcp_save])
+
+def hamming_loss(y_true, y_pred, tval = 0.4):
+    tmp = K.abs(y_true - y_pred)
+    return K.mean(K.cast(K.greater(tmp, tval), dtype = float))

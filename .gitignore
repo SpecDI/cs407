@@ -11,6 +11,8 @@ detection.txt
 # Log files
 /**/logs/**/*
 
+action_recognition/architectures/weights/**/*
+
 # Input files
 data/**/*.txt
 
