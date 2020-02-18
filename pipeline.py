@@ -12,6 +12,7 @@ from timeit import time
 import cv2
 import numpy as np
 from PIL import Image
+from matplotlib import pyplot as plt
 
 from object_detection.yolo3.yolo import YOLO
 
@@ -22,7 +23,17 @@ from tracking.deep_sort.tracker import Tracker
 from tools import generate_detections as gdet
 from tracking.deep_sort.detection import Detection as ddet
 
+from tensorflow.python.keras import backend as K
 from keras.models import load_model
+from keras.preprocessing.image import ImageDataGenerator
+
+# Constant variables
+FRAME_LENGTH = 83
+FRAME_WIDTH = 40
+FRAME_NUM = 8
+
+# Action indices
+actions_header = ['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing']
 
 def parse_args():
     """ Parse command line arguments.
@@ -30,6 +41,21 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description="Main detection, tracking and action recognition pipeline")
     return parser.parse_args()
+
+def hamming_loss(y_true, y_pred, tval = 0.4):
+    tmp = K.abs(y_true - y_pred)
+    return K.mean(K.cast(K.greater(tmp, tval), dtype = float))
+
+def process_batch(batch):
+    processed_batch = []
+
+    # Pad images
+    for img in batch:
+        processed_batch.append(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH)))
+        # plt.imshow(processed_batch[-1])
+        # plt.show()
+
+    return np.asarray(processed_batch)
 
 def main(yolo):
     print('Starting pipeline...')
@@ -41,6 +67,22 @@ def main(yolo):
     max_cosine_distance = 0.3
     nn_budget = None
     nms_max_overlap = 1.0
+
+    # Load in model
+    model = load_model(
+        'action_recognition/architectures/weights/lstm.hdf5',
+        custom_objects={
+            "hamming_loss": hamming_loss,
+        }
+    )
+    # Track id frame batch
+    track_tubeMap = {}
+
+    # Track id action
+    track_actionMap = {}
+
+    # Image data generator
+    datagen = ImageDataGenerator()
 
     # deep_sort 
     model_filename = 'object_detection/model_data/mars-small128.pb'
@@ -89,11 +131,44 @@ def main(yolo):
         tracker.update(detections)
         for track in tracker.tracks:
             if not track.is_confirmed() or track.time_since_update > 1:
-                continue 
+                continue
             bbox = track.to_tlbr()
+            
+            # Init text to be appended to bbox
+            append_str = str(track.track_id)
+
+            if track.track_id not in track_actionMap:
+                track_actionMap[track.track_id] = 'Unknown'
+
+            # Init new key if necessary
+            if track.track_id not in track_tubeMap:
+                track_tubeMap[track.track_id] = []
+
+            # Add frame segment to track dict
+            block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
+            track_tubeMap[track.track_id].append(block)
+
+            # Check size of track bucket
+            if len(track_tubeMap[track.track_id]) == FRAME_NUM:
+                # Generate predictions
+                batch = process_batch(track_tubeMap[track.track_id])
+                batch = batch.reshape(1, FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, 3)
+
+                preds = model.predict(batch)[0].tolist()
+                print(preds)
+                # Clear the list
+                track_tubeMap[track.track_id] = []
+
+                action_label = actions_header[preds.index(max(preds))]
+                print(f"Person {track.track_id} is {action_label}")
+
+                # Update map
+                track_actionMap[track.track_id] = action_label
+
+            # Update text to be appended
+            append_str += ' ' + track_actionMap[track.track_id]
 
             cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
-            append_str = str(track.track_id)
             cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
 
         for det in detections:
