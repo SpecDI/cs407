@@ -52,8 +52,6 @@ def process_batch(batch):
     # Pad images
     for img in batch:
         processed_batch.append(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH)))
-        # plt.imshow(processed_batch[-1])
-        # plt.show()
 
     return np.asarray(processed_batch)
 
