@@ -148,15 +148,17 @@ def main(yolo):
 
             # Check size of track bucket
             if len(track_tubeMap[track.track_id]) == FRAME_NUM:
-                # Generate predictions
+                # Process action tube
                 batch = process_batch(track_tubeMap[track.track_id])
                 batch = batch.reshape(1, FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, 3)
-
+                
+                # Generate predictions
                 preds = model.predict(batch)[0].tolist()
                 print(preds)
+
                 # Clear the list
                 track_tubeMap[track.track_id] = []
-
+                # Update action label to match corresponding action
                 action_label = actions_header[preds.index(max(preds))]
                 print(f"Person {track.track_id} is {action_label}")
 
@@ -165,7 +167,7 @@ def main(yolo):
 
             # Update text to be appended
             append_str += ' ' + track_actionMap[track.track_id]
-
+            # Create bbox and text label
             cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
             cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
 
