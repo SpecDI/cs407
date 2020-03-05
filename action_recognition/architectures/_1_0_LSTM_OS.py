@@ -15,7 +15,7 @@ TEST_DIR = '../../action-tubes/test/'
 # Constants to be defined
 WEIGHT_FILE_NAME = "lstm"
 BATCH_SIZE = 32
-EPOCHS = 1
+EPOCHS = 100
 
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
