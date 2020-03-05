@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime
 sys.path.insert(1, '../../frame_generators/')
-from VideoFrameGenerator_2_0_0 import ImageDataGenerator
+from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 
 # Tensorflow imports
 import tensorflow as tf
@@ -27,7 +27,7 @@ class TrainingSuite:
         self.train_data, self.test_data = self._load_data()
     
     def _load_data(self):
-        datagen = ImageDataGenerator()
+        datagen = ImageDataGenerator(rescale = 1.0 / 255.0)
         train_data = datagen.flow_from_directory(self.train_dir,
                                             target_size=(self.frame_length, self.frame_width),
                                             batch_size=self.batch_size,
@@ -45,13 +45,13 @@ class TrainingSuite:
                                                           write_graph=True,
                                                           write_images=True,
                                                           embeddings_freq=0)
-        mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_loss', mode='min')   
+        mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_loss', mode='min')
         model.fit_generator(
                 self.train_data,
-                steps_per_epoch=11,
+                steps_per_epoch=self.train_data.samples // self.batch_size,
                 epochs=self.epochs,
                 validation_data=self.test_data,
-                validation_steps=11,
+                validation_steps=self.test_data.samples // self.batch_size,
                 callbacks=[mcp_save])
 
 def hamming_loss(y_true, y_pred, tval = 0.4):

@@ -37,7 +37,7 @@ FRAME_WIDTH = 40
 FRAME_NUM = 8
 
 # Action indices
-actions_header = ['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing']
+actions_header = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
 
 def parse_args():
     """ Parse command line arguments.
@@ -69,7 +69,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
     model.add(TimeDistributed(Flatten()))
 
-    model.add(LSTM(100))
+    model.add(LSTM(256))
     model.add(Dropout(0.5))
 
     model.add(Dense(classes, kernel_initializer="normal", name='output'))
