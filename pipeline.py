@@ -27,6 +27,10 @@ from tensorflow.python.keras import backend as K
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
 
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
+
 # Constant variables
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
@@ -55,6 +59,24 @@ def process_batch(batch):
 
     return np.asarray(processed_batch)
 
+def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
+    model = Sequential()
+
+    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape, activation='relu'), input_shape=input_shape))
+    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape, activation='relu')))
+
+    model.add(TimeDistributed(Dropout(0.5)))
+    model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
+    model.add(TimeDistributed(Flatten()))
+
+    model.add(LSTM(100))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(classes, kernel_initializer="normal", name='output'))
+    model.add(Activation('softmax'))
+
+    return model
+
 def main(yolo):
     print('Starting pipeline...')
 
@@ -67,12 +89,25 @@ def main(yolo):
     nms_max_overlap = 1.0
 
     # Load in model
-    model = load_model(
-        'action_recognition/architectures/weights/lstm.hdf5',
-        custom_objects={
-            "hamming_loss": hamming_loss,
-        }
-    )
+    # model = load_model(
+    #     'action_recognition/architectures/weights/lstm.hdf5',
+    #     custom_objects={
+    #         "hamming_loss": hamming_loss,
+    #     }
+    # )
+
+    CHANNELS = 3
+    CLASSES = 13
+
+    KERNEL_SHAPE = (3, 3)
+    POOL_SHAPE = (2, 2)
+    INPUT_SHAPE = (FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, CHANNELS)
+
+    model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
+    model.load_weights('action_recognition/architectures/weights/lstm.hdf5')
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy', hamming_loss])
+
+
     # Track id frame batch
     track_tubeMap = {}
 
@@ -144,7 +179,7 @@ def main(yolo):
 
             # Add frame segment to track dict
             block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
-            track_tubeMap[track.track_id].append(block)
+            track_tubeMap[track.track_id].append(block / 255.0)
 
             # Check size of track bucket
             if len(track_tubeMap[track.track_id]) == FRAME_NUM:
