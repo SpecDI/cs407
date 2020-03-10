@@ -4,6 +4,9 @@
 # NFS files
 .nfs*
 
+# Ignore logs
+*.out
+
 # Output files
 output/
 detection.txt
@@ -24,6 +27,7 @@ data/**/*.txt
 
 # Keras model weights
 *.h5
+*.hdf5
 
 # Output of type avi
 *.avi

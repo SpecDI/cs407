@@ -18,6 +18,7 @@ import scipy.ndimage as ndi
 from six.moves import range
 import threading
 import warnings
+from collections import OrderedDict
 
 try:
     from keras import backend as K
@@ -1039,9 +1040,9 @@ class DirectoryIterator(Iterator):
                     for c in class_names:
                         unique_classes.add(c)
 
-        
+        unique_classes = sorted(list(unique_classes))
         self.num_class = len(unique_classes)
-        self.class_indices = dict(zip(unique_classes, range(len(unique_classes))))
+        self.class_indices = OrderedDict(zip(unique_classes, range(len(unique_classes))))
         print(self.class_indices)
 
         # Finds all the action tubes in the class folders
@@ -1141,7 +1142,7 @@ class DirectoryIterator(Iterator):
                                 target_size=self.target_size)
                 x = img_to_array(img, data_format=self.data_format)
                 frame_dups = duplicates[frame_count]
-                batch_x[i, s_ind:s_ind + frame_dups] = x
+                batch_x[i, s_ind:s_ind + frame_dups] = x#.astype(np.uint8)
                 s_ind += frame_dups
                 
                 frame_count+=1

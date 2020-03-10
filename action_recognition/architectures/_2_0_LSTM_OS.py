@@ -1,7 +1,7 @@
 """
-Version 1.0 of the LSTM model.
+Version 1.1 of the LSTM model. This is a Variational LSTM.
 """
-# Keras imports
+# Keras imports 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM, BatchNormalization
@@ -12,7 +12,7 @@ TRAIN_DIR = '../../action-tubes/training/all/completed/'
 TEST_DIR = '../../action-tubes/test/'
 
 # Constants to be defined
-WEIGHT_FILE_NAME = "lstm"
+WEIGHT_FILE_NAME = "lstm_1_4"
 BATCH_SIZE = 32
 EPOCHS = 100
 
@@ -50,20 +50,26 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
 
     model.add(TimeDistributed(Flatten()))
+    
+    model.add(Dropout(0.15))
+    model.add(LSTM(512, recurrent_dropout=0.15, return_sequences=True))
+    model.add(Dropout(0.15))
 
-    model.add(LSTM(100))
-
-    model.add(Dense(classes, name='output'))
-    model.add(BatchNormalization())
-    model.add(Activation('sigmoid'))
+    model.add(Dense(classes, name='output', activation='sigmoid'))
     
     return model
 
 if __name__ == "__main__":
-    
-    from training import TrainingSuite
 
-    training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
+    # from training import TrainingSuite
+# 
+    # training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
+    # model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
+# 
+    # training_suite.evaluation(model, WEIGHT_FILE_NAME)
+
+    from predicting import Prediction
+
+    pred = Prediction(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
-
-    training_suite.evaluation(model, WEIGHT_FILE_NAME)
+    pred.probalistic_predictions(model)
