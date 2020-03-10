@@ -27,14 +27,21 @@ from tensorflow.python.keras import backend as K
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
 
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM
+from action_recognition.architectures._1_1_LSTM_OS import cnn_lstm
+from action_recognition.architectures.Metrics import MetricsAtTopK
+from action_recognition.architectures.Loss import LossFunctions
 
 # Constant variables
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
 FRAME_NUM = 8
+
+CHANNELS = 3
+CLASSES = 13
+
+KERNEL_SHAPE = (3, 3)
+POOL_SHAPE = (2, 2)
+INPUT_SHAPE = (FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, CHANNELS)
 
 # Action indices
 actions_header = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
@@ -59,23 +66,22 @@ def process_batch(batch):
 
     return np.asarray(processed_batch)
 
-def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
-    model = Sequential()
+def predict_with_uncertainty(self, model, x, n_iter=10):
+    """
+    Returns model prediction using MC dropout technique.
+    """
+    # Implement a function which applies dropout during test time.  
+    f = K.function([model.layers[0].input, K.learning_phase()], [model.layers[-1].output])
+    
+    result = np.zeros((n_iter, ) + (1, 32, 64, 13))
 
-    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape, activation='relu'), input_shape=input_shape))
-    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape, activation='relu')))
+    for iter in range(n_iter):
+        result[iter] = f([x,1])
 
-    model.add(TimeDistributed(Dropout(0.5)))
-    model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
-    model.add(TimeDistributed(Flatten()))
+    prediction = result.mean(axis=0)
+    uncertainty = result.var(axis=0)
 
-    model.add(LSTM(256))
-    model.add(Dropout(0.5))
-
-    model.add(Dense(classes, kernel_initializer="normal", name='output'))
-    model.add(Activation('softmax'))
-
-    return model
+    return prediction, uncertainty
 
 def main(yolo):
     print('Starting pipeline...')
@@ -88,25 +94,32 @@ def main(yolo):
     nn_budget = None
     nms_max_overlap = 1.0
 
+    metrics = MetricsAtTopK(k=2)
+    losses = LossFunctions()
+
     # Load in model
     # model = load_model(
-    #     'action_recognition/architectures/weights/lstm.hdf5',
+    #     'action_recognition/architectures/weights/lstm_1_2.hdf5',
     #     custom_objects={
+    #         "weighted_binary_crossentropy": losses.weighted_binary_crossentropy,
+    #         "recall_at_k": metrics.recall_at_k, 
+    #         "precision_at_k": metrics.precision_at_k, 
+    #         "f1_at_k": metrics.f1_at_k,
     #         "hamming_loss": hamming_loss,
     #     }
     # )
 
-    CHANNELS = 3
-    CLASSES = 13
-
-    KERNEL_SHAPE = (3, 3)
-    POOL_SHAPE = (2, 2)
-    INPUT_SHAPE = (FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, CHANNELS)
-
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
-    model.load_weights('action_recognition/architectures/weights/lstm.hdf5')
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse', 'accuracy', hamming_loss])
+    model.load_weights('action_recognition/architectures/weights/lstm_1_4_1.hdf5')
 
+    metrics = MetricsAtTopK(k=2)
+    losses = LossFunctions()
+    model.compile(loss=losses.weighted_binary_crossentropy, 
+                    optimizer='adam', metrics=['accuracy', 
+                                                metrics.recall_at_k, 
+                                                metrics.precision_at_k, 
+                                                metrics.f1_at_k, 
+                                                losses.hamming_loss])
 
     # Track id frame batch
     track_tubeMap = {}
