@@ -15,15 +15,14 @@ from keras.preprocessing.image import img_to_array, ImageDataGenerator
 
 import argparse
 
-def tensor_random_noise(im):
-    return random_noise(im, mode='gaussian')
-
 datagen = ImageDataGenerator( 
         rotation_range = 15, 
         shear_range = 0.2, 
         zoom_range = 0.2, 
         brightness_range = (0.5, 1.5),
-        preprocessing_function = tensor_random_noise)
+        width_shift_range = 0.1,
+        height_shift_range = 0.1,
+        rescale = 1.0 / 255.0)
 
 def parse_args():
     """ Parse command line arguments.
@@ -63,20 +62,13 @@ def augment_class(action_path, scaling_factor, prefix):
                 
 def transform_image(im_file, target_names):
     im = img_to_array(Image.open(im_file))
-    im /= 255.0
-    
-    plt.imshow(im)
-    plt.show()
     
     original_shape = im.shape
     im = im.reshape((1, ) + im.shape)
 
     i = 0
     for batch in datagen.flow(im, batch_size = 1):
-        im = batch.reshape(original_shape).astype('uint8')
-
-        plt.imshow(im)
-        plt.show()
+        im = random_noise(batch.reshape(original_shape), mode='gaussian', clip = True)
 
         im_name = target_names[i] + '/' + os.path.basename(os.path.normpath(im_file))
         matplotlib.image.imsave(im_name, im)
