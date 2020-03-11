@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import math
 import shutil
+import random
 
 from skimage.util import random_noise
 
@@ -16,7 +17,7 @@ from keras.preprocessing.image import img_to_array, ImageDataGenerator
 import argparse
 
 datagen = ImageDataGenerator( 
-        rotation_range = 15, 
+        rotation_range = 25, 
         shear_range = 0.2, 
         zoom_range = 0.2, 
         brightness_range = (0.5, 1.5),
@@ -46,6 +47,21 @@ def clean_class(action_path, prefix):
         if prefix in tube:
             shutil.rmtree(tube)
 
+def gen_random_transform():
+    transform_params = {
+        'theta': random.uniform(0.7, 0.95),
+        'tx' : random.uniform(0.7, 0.95),
+        'ty' : random.uniform(0.7, 0.95),
+        'shear' : random.uniform(0.7, 0.95),
+        'zx' : random.uniform(0.7, 0.95),
+        'zy' : random.uniform(0.7, 0.95),
+        'flip_horizontal' : bool(random.getrandbits(1)),
+        'flip_vertical' : bool(random.getrandbits(1)),
+        'channel_shift_intencity' : 0.0,
+        'brightness' : random.uniform(0.7, 0.95)
+    }
+    return transform_params
+
 def augment_class(action_path, scaling_factor, prefix):
     print(f"Augmenting {os.path.basename(os.path.normpath(action_path))} with factor {scaling_factor}")
 
@@ -53,11 +69,12 @@ def augment_class(action_path, scaling_factor, prefix):
     for tube in glob(action_path + '*/'):
         if not prefix in tube:
             # Generate target dir to store augmented tube
-            generated_actionTubes = []
+            generated_actionTubes = {}
             for i in range(scaling_factor):
-                # Generate name of tube and save it
+                # Generate name of tube
                 target_dirName = action_path + prefix + str(i) + '_' + os.path.basename(os.path.normpath(tube))
-                generated_actionTubes.append(target_dirName)
+                # Save tube name with corresponding transformation
+                generated_actionTubes[target_dirName] = gen_random_transform()
                 os.mkdir(target_dirName)
 
             # Populate tubes by transforming
@@ -68,23 +85,17 @@ def augment_class(action_path, scaling_factor, prefix):
 def transform_image(im_file, target_names):
     # Read image
     im = img_to_array(Image.open(im_file))
-    
-    original_shape = im.shape
-    im = im.reshape((1, ) + im.shape)
 
-    i = 0
-    for batch in datagen.flow(im, batch_size = 1):
-        # Stop when reached end of action tube count
-        if i == len(target_names):
-            break
+    # Iterate over all action generated tubes for given class
+    for actionTube_key in target_names:
+        # Augment image given action tube's transform
+        im = datagen.apply_transform(im, target_names[actionTube_key])
+        im /= 255.0
+        im = random_noise(im, mode = 'gaussian', var = 0.005, clip = True)
 
-        # Get image from data augmentator and apply some gaussian noise
-        im = random_noise(batch.reshape(original_shape), mode='gaussian', clip = True)
-        # Generate image name and save
-        im_name = target_names[i] + '/' + os.path.basename(os.path.normpath(im_file))
+        # Generate image name and save it
+        im_name = actionTube_key + '/' + os.path.basename(os.path.normpath(im_file))
         matplotlib.image.imsave(im_name, im)
-
-        i += 1
 
 def main(mode, path_tubes):
     # Define augmentation prefix
