@@ -39,18 +39,23 @@ def parse_args():
 
 def clean_class(action_path, prefix):
     print('Cleaning: ', os.path.basename(os.path.normpath(action_path)))
+
+    # Iterate over each tube in given class path
     for tube in glob(action_path + '*/'):
+        # If tube contains prefix delete it
         if prefix in tube:
             shutil.rmtree(tube)
 
 def augment_class(action_path, scaling_factor, prefix):
     print(f"Augmenting {os.path.basename(os.path.normpath(action_path))} with factor {scaling_factor}")
 
+    # Iterate over each tube in given class path
     for tube in glob(action_path + '*/'):
         if not prefix in tube:
-            # Generate target augmentated tube
+            # Generate target dir to store augmented tube
             generated_actionTubes = []
             for i in range(scaling_factor):
+                # Generate name of tube and save it
                 target_dirName = action_path + prefix + str(i) + '_' + os.path.basename(os.path.normpath(tube))
                 generated_actionTubes.append(target_dirName)
                 os.mkdir(target_dirName)
@@ -61,6 +66,7 @@ def augment_class(action_path, scaling_factor, prefix):
                 transform_image(im_file, generated_actionTubes)
                 
 def transform_image(im_file, target_names):
+    # Read image
     im = img_to_array(Image.open(im_file))
     
     original_shape = im.shape
@@ -68,19 +74,23 @@ def transform_image(im_file, target_names):
 
     i = 0
     for batch in datagen.flow(im, batch_size = 1):
-        im = random_noise(batch.reshape(original_shape), mode='gaussian', clip = True)
+        # Stop when reached end of action tube count
+        if i == len(target_names):
+            break
 
+        # Get image from data augmentator and apply some gaussian noise
+        im = random_noise(batch.reshape(original_shape), mode='gaussian', clip = True)
+        # Generate image name and save
         im_name = target_names[i] + '/' + os.path.basename(os.path.normpath(im_file))
         matplotlib.image.imsave(im_name, im)
 
         i += 1
-        if i == len(target_names):
-            break
 
 def main(mode, path_tubes):
     # Define augmentation prefix
     prefix = 'augg_'
-
+    
+    # Dictionary that stores the number of action tubes for each class
     tube_map = {}
     maxTube_count = 0
     # Iterate over all action classes
@@ -96,22 +106,23 @@ def main(mode, path_tubes):
             maxTube_count = current_count
     
     # Update count to scaling factor
+    # so each class will now point some scaling factor to reach max
     for action_key in tube_map:
-        tube_map[action_key] = math.ceil(maxTube_count / tube_map[action_key])
+        scale_factor = round(maxTube_count / tube_map[action_key])
+        if scale_factor == 1:
+            scale_factor = 0
+        tube_map[action_key] = scale_factor
 
     # Print out identified action classes and factors
     for action_key in tube_map:
         print(f"{os.path.basename(os.path.normpath(action_key))} -> {tube_map[action_key]}")
 
-    # Augment each action dir based on map data
+    # Augment/clean each action dir based on map data
     for action_key in tube_map:
-        if mode == 'augmentation':
+        if mode == 'augmentation' and tube_map[action_key] > 0:
             augment_class(action_key, tube_map[action_key], prefix)
         elif mode == 'clean':
             clean_class(action_key, prefix)
-    
-    # print('Max action tube count: ', maxTube_count)
-    # print(tube_map)
 
 if __name__ == '__main__':
     # Parse user provided arguments
