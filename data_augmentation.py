@@ -53,8 +53,8 @@ def gen_random_transform():
         'tx' : random.uniform(0.7, 0.95),
         'ty' : random.uniform(0.7, 0.95),
         'shear' : random.uniform(0.7, 0.95),
-        'zx' : random.uniform(0.7, 0.95),
-        'zy' : random.uniform(0.7, 0.95),
+        'zx' : random.uniform(0.9, 0.95),
+        'zy' : random.uniform(0.9, 0.95),
         'flip_horizontal' : bool(random.getrandbits(1)),
         'flip_vertical' : bool(random.getrandbits(1)),
         'channel_shift_intencity' : 0.0,
@@ -91,7 +91,7 @@ def transform_image(im_file, target_names):
         # Augment image given action tube's transform
         im = datagen.apply_transform(im, target_names[actionTube_key])
         im /= 255.0
-        im = random_noise(im, mode = 'gaussian', var = 0.005, clip = True)
+        im = random_noise(im, mode = 'gaussian', var = 0.001, clip = True)
 
         # Generate image name and save it
         im_name = actionTube_key + '/' + os.path.basename(os.path.normpath(im_file))
