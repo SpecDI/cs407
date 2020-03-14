@@ -109,6 +109,11 @@ def main(mode, path_tubes):
         # Get the number of tubes in a given class
         current_count = len([x[0] for x in os.walk(action_class)]) - 1 # don't count . dir
         
+        # Print name of tube if emtpy
+        if current_count == 0:
+            print(f"{action_class} is EMPTY!")
+            continue
+
         # Insert tube count in map
         tube_map[action_class] = current_count
         
