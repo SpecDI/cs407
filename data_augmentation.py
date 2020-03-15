@@ -127,7 +127,9 @@ def main(mode, path_tubes):
         scale_factor = round(maxTube_count / tube_map[action_key])
         if scale_factor == 1:
             scale_factor = 0
-        tube_map[action_key] = scale_factor
+            
+        # Store factor capped at 100
+        tube_map[action_key] = scale_factor if scale_factor <= 100 else 100
 
     # Print out identified action classes and factors
     for action_key in tube_map:
