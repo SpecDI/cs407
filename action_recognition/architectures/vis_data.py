@@ -31,8 +31,9 @@ for action_tube, label in zip(action_tubes, labels):
     print(label)
     for i in range(0, 16):
         img = action_tube[i]
+        print(img)
         plt.subplot(2, 8, i+1)
-        plt.imshow(img.astype(np.uint8))
+        plt.imshow(img)
     plt.savefig('Test_labelling.png')
     break
 

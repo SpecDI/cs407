@@ -1141,6 +1141,7 @@ class DirectoryIterator(Iterator):
                                 grayscale=grayscale,
                                 target_size=self.target_size)
                 x = img_to_array(img, data_format=self.data_format)
+                x = self.image_data_generator.standardize(x)
                 frame_dups = duplicates[frame_count]
                 batch_x[i, s_ind:s_ind + frame_dups] = x#.astype(np.uint8)
                 s_ind += frame_dups
