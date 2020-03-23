@@ -7,7 +7,7 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM, BatchNormalization
 from keras.callbacks import ModelCheckpoint
 
-from temporal_pooling import TemporalMaxPooling
+from temporal_pooling import TemporalMaxPooling2D
 
 # Paths to be set
 TRAIN_DIR = '../../action-tubes/completed/'
@@ -36,17 +36,17 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     """
     model = Sequential()
 
-    model.add(TimeDistributed(Conv2D(filters=32, kernel_size=kernel_shape), input_shape=input_shape))
+    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape), input_shape=input_shape))
     model.add(TimeDistributed(BatchNormalization()))
     model.add(TimeDistributed(Activation("relu")))
     model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
 
-    model.add(TimeDistributed(Conv2D(filters=32, kernel_size=kernel_shape)))
+    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape)))
     model.add(TimeDistributed(BatchNormalization()))
     model.add(TimeDistributed(Activation("relu")))
     model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
 
-    model.add(TimeDistributed(Conv2D(filters=32, kernel_size=kernel_shape)))
+    model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape)))
     model.add(TimeDistributed(BatchNormalization()))
     model.add(TimeDistributed(Activation("relu")))
     model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
@@ -54,8 +54,8 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model.add(TimeDistributed(Flatten()))
     
     model.add(Dropout(0.15))
-    model.add(LSTM(32, recurrent_dropout=0.15, return_sequences=True))
-    model.add(TemporalMaxPooling())
+    model.add(LSTM(512, recurrent_dropout=0.15, return_sequences=True))
+    model.add(TemporalMaxPooling2D())
     model.add(Dropout(0.15))
 
     model.add(Dense(classes, name='output', activation='sigmoid'))
