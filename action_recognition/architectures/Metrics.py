@@ -13,17 +13,16 @@ class RankMetrics:
     
     def coverage_error(self, y_true, y_pred):
         y_pred_masked = tf.ragged.boolean_mask(y_pred, y_true)
-        y_pred_masked = tf.where(tf.is_nan(y_pred_masked), tf.ones_like(y_pred_masked), y_pred_masked)
         # shape_1 = y_pred_masked.get_shape()[0]
         # shape_2 = y_pred_masked.get_shape()[1]
         # y_pred_masked = tf.reshape(y_pred_masked, [shape_1, shape_2])
         
         # y_pred_masked = tf.reshape(y_pred_masked, [2, 1])
 
-        # y_min_relevant = tf.reduce_min(y_pred_masked, axis=1, keepdims=True)
+        y_min_relevant = tf.reduce_min(y_pred_masked, axis=1, keepdims=True)
         # coverage = tf.reduce_sum(tf.cast((y_pred >= y_min_relevant), tf.float32), axis=1)
         # return tf.reduce_mean(coverage)
-        return y_pred_masked
+        return y_min_relevant
 
     def one_error(self, y_true, y_pred):
         mask = (tf.reduce_max(y_pred, axis=1, keepdims=True) == y_pred)
