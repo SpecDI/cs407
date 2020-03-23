@@ -1,6 +1,9 @@
 # VS code settings
 .vscode/
 
+# ZIP files
+*.zip
+
 # NFS files
 .nfs*
 
@@ -25,6 +28,7 @@ data/**/*.txt
 *.MOV
 *.mov
 *.webm
+*.png
 
 # Keras model weights
 *.h5
