@@ -7,8 +7,10 @@ from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 
 import matplotlib.pyplot as plt
 import numpy as np
+from keras.applications.vgg16 import preprocess_input
 
-datagen = ImageDataGenerator(rescale = 1.0 / 255.0)
+
+datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
 train_dir = '../../action-tubes/training/all/completed/'
 frame_num = 64
