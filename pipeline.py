@@ -34,7 +34,7 @@ from action_recognition.architectures.Loss import LossFunctions
 # Constant variables
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
-FRAME_NUM = 8
+FRAME_NUM = 64
 
 CHANNELS = 3
 CLASSES = 13
@@ -49,8 +49,18 @@ actions_header = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', '
 def parse_args():
     """ Parse command line arguments.
     """
-
     parser = argparse.ArgumentParser(description="Main detection, tracking and action recognition pipeline")
+
+    parser.add_argument(
+        "--hide_window", help="Flag used to hide the cv2 output window",
+        action = 'store_true',
+        default = False
+    )
+
+    parser.add_argument(
+        "--weights_file", help="Name of weight file to be loaded for the action recognition model",
+        required = True)
+
     return parser.parse_args()
 
 def hamming_loss(y_true, y_pred, tval = 0.4):
@@ -83,7 +93,7 @@ def predict_with_uncertainty(self, model, x, n_iter=10):
 
     return prediction, uncertainty
 
-def main(yolo):
+def main(yolo, hide_window, weights_file):
     print('Starting pipeline...')
 
     input_file = './web_server/input.mp4'
@@ -110,7 +120,7 @@ def main(yolo):
     # )
 
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
-    model.load_weights('action_recognition/architectures/weights/lstm_1_4_1.hdf5')
+    model.load_weights('action_recognition/architectures/weights/' + weights_file + '.hdf5')
 
     metrics = MetricsAtTopK(k=2)
     losses = LossFunctions()
@@ -223,7 +233,9 @@ def main(yolo):
             bbox = det.to_tlbr()
             cv2.rectangle(frame,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
 
-        cv2.imshow('', cv2.resize(frame, (1200, 675)))
+        # Display video as processed if necessary
+        if not hide_window:
+            cv2.imshow('', cv2.resize(frame, (1200, 675)))
 
         # save a frame
         out.write(frame)
@@ -250,4 +262,4 @@ def main(yolo):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(YOLO())
+    main(YOLO(), args.hide_window, args.weights_file)
