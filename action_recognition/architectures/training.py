@@ -69,5 +69,5 @@ class TrainingSuite:
                 steps_per_epoch=self.train_data.samples // self.batch_size,
                 epochs=self.epochs,
                 validation_data=self.test_data,
-                validation_steps=self.test_data.samples // self.batch_size,
-                callbacks=[mcp_save, es, tensorboard_callback])
+                validation_steps=self.test_data.samples // self.batch_size)#,
+                #callbacks=[mcp_save, es, tensorboard_callback])

@@ -7,6 +7,8 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, LSTM, BatchNormalization
 from keras.callbacks import ModelCheckpoint
 
+from temporal_pooling import TemporalMaxPooling
+
 # Paths to be set
 TRAIN_DIR = '../../action-tubes/completed/'
 TEST_DIR = '../../action-tubes/completed/'
@@ -52,7 +54,8 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model.add(TimeDistributed(Flatten()))
     
     model.add(Dropout(0.15))
-    model.add(LSTM(32, recurrent_dropout=0.15))
+    model.add(LSTM(32, recurrent_dropout=0.15, return_sequences=True))
+    model.add(TemporalMaxPooling())
     model.add(Dropout(0.15))
 
     model.add(Dense(classes, name='output', activation='sigmoid'))
