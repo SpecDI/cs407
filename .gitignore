@@ -8,6 +8,7 @@
 *.out
 
 # Output files
+action-tubes/
 output/
 detection.txt
 
