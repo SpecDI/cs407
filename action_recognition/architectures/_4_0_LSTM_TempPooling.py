@@ -16,7 +16,7 @@ TEST_DIR = '../../action-tubes/test/'
 # Constants to be defined
 WEIGHT_FILE_NAME = "lstm_4_0"
 BATCH_SIZE = 32
-EPOCHS = 10
+EPOCHS = 50
 
 FRAME_LENGTH = 83
 FRAME_WIDTH = 40
@@ -53,10 +53,13 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     model.add(TimeDistributed(Flatten()))
     
-    model.add(Dropout(0.15))
-    model.add(LSTM(512, recurrent_dropout=0.15, return_sequences=True))
+    model.add(Dropout(0.7))
+    model.add(LSTM(256, recurrent_dropout=0.7, return_sequences=True))
+    model.add(Dropout(0.7))
+    model.add(LSTM(256, recurrent_dropout=0.7, return_sequences=True))
+    model.add(Dropout(0.7))
     model.add(TemporalMaxPooling2D())
-    model.add(Dropout(0.15))
+    model.add(Dropout(0.7))
 
     model.add(Dense(classes, name='output', activation='sigmoid'))
     
