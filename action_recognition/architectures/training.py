@@ -60,7 +60,11 @@ class TrainingSuite:
                                                           write_images=True,
                                                           embeddings_freq=0)
         
-        mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')
+        if weight_file is None:
+            callbacks = [es, tensorboard_callback]
+        else:
+            mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')
+            callbacks = [mcp_save, es, tensorboard_callback]
 
         es = EarlyStopping(monitor='val_f1_at_k', mode='max', patience=5)
         
@@ -70,4 +74,4 @@ class TrainingSuite:
                 epochs=self.epochs,
                 validation_data=self.test_data,
                 validation_steps=self.test_data.samples // self.batch_size,
-                callbacks=[mcp_save, es, tensorboard_callback])
+                callbacks=callbacks)

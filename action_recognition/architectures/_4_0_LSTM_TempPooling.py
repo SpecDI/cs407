@@ -14,7 +14,7 @@ TRAIN_DIR = '../../action-tubes/training/all/completed/'
 TEST_DIR = '../../action-tubes/test/'
 
 # Constants to be defined
-WEIGHT_FILE_NAME = "lstm_4_0"
+WEIGHT_FILE_NAME = None
 BATCH_SIZE = 32
 EPOCHS = 50
 
