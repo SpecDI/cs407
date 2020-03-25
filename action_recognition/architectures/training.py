@@ -60,13 +60,14 @@ class TrainingSuite:
                                                           write_images=True,
                                                           embeddings_freq=0)
         
+
+        es = EarlyStopping(monitor='val_f1_at_k', mode='max', patience=5)
+        
         if weight_file is None:
             callbacks = [es, tensorboard_callback]
         else:
             mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')
             callbacks = [mcp_save, es, tensorboard_callback]
-
-        es = EarlyStopping(monitor='val_f1_at_k', mode='max', patience=5)
         
         model.fit_generator(
                 self.train_data,
