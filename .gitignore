@@ -11,7 +11,8 @@
 *.out
 
 # Output files
-action-tubes/
+action-tubes/test/
+action-tubes/training/
 output/
 detection.txt
 
