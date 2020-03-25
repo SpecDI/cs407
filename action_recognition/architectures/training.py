@@ -43,7 +43,7 @@ class TrainingSuite:
                                             frames_per_step=self.frame_num, shuffle=True)  
         return train_data, test_data
 
-    def evaluation(self, model, weight_file):
+    def evaluation(self, model, weight_file, gen_logs = True):
         metrics = MetricsAtTopK(k=2)
         losses = LossFunctions()
 
@@ -52,22 +52,20 @@ class TrainingSuite:
                                                                                             metrics.precision_at_k, 
                                                                                             metrics.f1_at_k, 
                                                                                             losses.hamming_loss])
-
-        logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
-                                                          histogram_freq=1,
-                                                          write_graph=True,
-                                                          write_images=True,
-                                                          embeddings_freq=0)
         
 
+        mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')        
         es = EarlyStopping(monitor='val_f1_at_k', mode='max', patience=5)
+        callbacks = [mcp_save, es]
         
-        if weight_file is None:
-            callbacks = [es, tensorboard_callback]
-        else:
-            mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')
-            callbacks = [mcp_save, es, tensorboard_callback]
+        if gen_logs:
+            logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
+            tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
+                                                            histogram_freq=1,
+                                                            write_graph=True,
+                                                            write_images=True,
+                                                            embeddings_freq=0)  
+            callbacks.append(tensorboard_callback)  
         
         model.fit_generator(
                 self.train_data,

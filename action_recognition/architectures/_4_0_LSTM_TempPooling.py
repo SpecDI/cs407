@@ -14,7 +14,7 @@ TRAIN_DIR = '../../action-tubes/training/all/completed/'
 TEST_DIR = '../../action-tubes/test/'
 
 # Constants to be defined
-WEIGHT_FILE_NAME = None
+WEIGHT_FILE_NAME = '_4_0_LSTM_TempPooling'
 BATCH_SIZE = 32
 EPOCHS = 50
 
@@ -69,4 +69,4 @@ if __name__ == "__main__":
     training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
 
-    training_suite.evaluation(model, WEIGHT_FILE_NAME)
+    training_suite.evaluation(model, WEIGHT_FILE_NAME, gen_logs = False)
