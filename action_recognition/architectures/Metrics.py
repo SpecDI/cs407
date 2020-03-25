@@ -1,6 +1,30 @@
 import tensorflow as tf
 K = tf.keras.backend
 
+class RankMetrics:
+    def __init__(self):
+        pass
+
+    def rank_loss(self, y_true, y_pred):
+        y_true_ = tf.cast(y_true, tf.float32)
+        partial_losses = tf.maximum(0.0, 1 - y_pred[:, None, :] + y_pred[:, :, None])
+        loss = partial_losses * y_true_[:, None, :] * (1 - y_true_[:, :, None])
+        return tf.reduce_sum(loss)
+    
+    def coverage_error(self, y_true, y_pred):
+        y_pred_masked = tf.ragged.boolean_mask(y_pred, y_true)
+        y_min_relevant = tf.reduce_min(y_pred_masked, axis=1)
+        y_min_relevant = tf.reshape(y_min_relevant, [tf.shape(y_pred)[0], 1])
+        coverage = tf.reduce_sum(tf.cast((y_pred >= y_min_relevant), tf.float32), axis=1)
+        return tf.reduce_mean(coverage)
+
+    def one_error(self, y_true, y_pred):
+        max_tensor = tf.reduce_max(y_pred, axis=1, keepdims=True)
+        mask = tf.math.equal(y_pred, max_tensor)
+        y_true_masked = tf.ragged.boolean_mask(y_true, mask)
+        one_error = tf.reduce_min(y_true_masked, axis=1)
+        return tf.reduce_mean(1. - tf.cast(one_error, tf.float32))
+
 class MetricsAtTopK:
     def __init__(self, k):
         self.k = k

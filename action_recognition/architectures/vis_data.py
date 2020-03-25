@@ -7,8 +7,10 @@ from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 
 import matplotlib.pyplot as plt
 import numpy as np
+from keras.applications.vgg16 import preprocess_input
 
-datagen = ImageDataGenerator(rescale = 1.0 / 255.0)
+
+datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
 train_dir = '../../action-tubes/training/all/completed/'
 frame_num = 64
@@ -31,8 +33,9 @@ for action_tube, label in zip(action_tubes, labels):
     print(label)
     for i in range(0, 16):
         img = action_tube[i]
+        print(img)
         plt.subplot(2, 8, i+1)
-        plt.imshow(img.astype(np.uint8))
+        plt.imshow(img)
     plt.savefig('Test_labelling.png')
     break
 
