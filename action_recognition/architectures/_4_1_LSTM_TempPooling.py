@@ -54,10 +54,7 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
     model.add(TimeDistributed(Flatten()))
     
     model.add(Dropout(0.7))
-    model.add(Bidirectional(LSTM(256, recurrent_dropout=0.7, return_sequences=True)))
-    model.add(Dropout(0.7))
-    model.add(Bidirectional(LSTM(256, recurrent_dropout=0.7, return_sequences=True)))
-    model.add(Dropout(0.7))
+    model.add(Bidirectional(LSTM(512, recurrent_dropout=0.7, return_sequences=True)))
     model.add(TemporalMaxPooling2D())
     model.add(Dropout(0.7))
 
