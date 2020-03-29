@@ -10,8 +10,10 @@ from keras.callbacks import ModelCheckpoint
 from temporal_pooling import TemporalMaxPooling2D
 
 # Paths to be set
-TRAIN_DIR = '../../action-tubes/training/all/completed/'
-TEST_DIR = '../../action-tubes/test/'
+# TRAIN_DIR = '../../action-tubes/training/all/completed/'
+# TEST_DIR = '../../action-tubes/test/'
+TRAIN_DIR = '../../action-tubes/completed/'
+TEST_DIR = '../../action-tubes/completed/'
 
 # Constants to be defined
 WEIGHT_FILE_NAME = '_4_1_LSTM_TempPooling'
@@ -22,7 +24,7 @@ FRAME_LENGTH = 83
 FRAME_WIDTH = 40
 FRAME_NUM = 8
 CHANNELS = 3
-CLASSES = 13
+CLASSES = 11
 
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
@@ -69,4 +71,4 @@ if __name__ == "__main__":
     training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
 
-    training_suite.evaluation(model, WEIGHT_FILE_NAME, gen_logs = False)
+    training_suite.evaluation(model, WEIGHT_FILE_NAME)

@@ -3,24 +3,19 @@ Version 2.0 for the CNN
 """
 # Keras imports 
 from keras import Model
-from keras.layers import Dense, Dropout, Activation, Flatten, Lambda, LSTM
+from keras.layers import Dense, Dropout, Activation, Flatten, Lambda
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
 from keras import backend as K
-# from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
-from keras.applications.resnet import ResNet50, preprocess_input
-
-from temporal_pooling import TemporalMaxPooling2D
+from keras.applications.inception_v3 import InceptionV3, preprocess_input
 
 # Data paths
-# TRAIN_DIR = '../../action-tubes/training/all/completed/'
-# TEST_DIR = '../../action-tubes/test/'
 TRAIN_DIR = '../../action-tubes/completed/'
 TEST_DIR = '../../action-tubes/completed/'
 
 # Constants
-WEIGHT_FILE_NAME = "_1_0_cnn_OS"
+WEIGHT_FILE_NAME = "_2_0_cnn_inception"
 BATCH_SIZE = 8
-EPOCHS = 100
+EPOCHS = 2
 
 FRAME_LENGTH = 244
 FRAME_WIDTH = 244
@@ -38,16 +33,16 @@ def cnn(input_shape, kernel_shape, pool_shape, classes):
     - Transfer Learning
     """
     embedded_dims = 512
-    resnet = ResNet50(input_shape=(FRAME_LENGTH, FRAME_WIDTH, CHANNELS),
+    inception = InceptionV3(input_shape=(FRAME_LENGTH, FRAME_WIDTH, CHANNELS),
                         weights="imagenet",
                         include_top=False,
                         pooling='avg')
 
-    for layer in resnet.layers:
+    for layer in inception.layers:
         layer.trainable = False 
 
-    cnn = Model(inputs=resnet.input, outputs=resnet.output)
-    cnn.summary()
+    cnn = Model(inputs=inception.input, outputs=inception.output)
+    #cnn.summary()
 
     input_ = Input(shape=input_shape)
     x = TimeDistributed(cnn)(input_)
