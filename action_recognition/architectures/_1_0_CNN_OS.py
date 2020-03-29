@@ -10,8 +10,10 @@ from tensorflow.python.keras import backend as K
 from tensorflow.keras.applications.resnet import ResNet50, preprocess_input
 
 # Data paths
-TRAIN_DIR = '../../action-tubes/training/all/completed/'
-TEST_DIR = '../../action-tubes/test/'
+# TRAIN_DIR = '../../action-tubes/training/all/completed/'
+# TEST_DIR = '../../action-tubes/test/'
+TRAIN_DIR = '../../action-tubes/completed/'
+TEST_DIR = '../../action-tubes/completed/'
 
 # Constants
 WEIGHT_FILE_NAME = "_1_0_cnn_OS"
@@ -22,7 +24,7 @@ FRAME_LENGTH = 244
 FRAME_WIDTH = 244
 FRAME_NUM = 16
 CHANNELS = 3
-CLASSES = 13
+CLASSES = 11
 
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
