@@ -1,5 +1,6 @@
 import tensorflow as tf
 K = tf.keras.backend
+# tf.enable_eager_execution()
 
 class RankMetrics:
     def __init__(self):
@@ -10,8 +11,72 @@ class RankMetrics:
         partial_losses = tf.maximum(0.0, 1 - y_pred[:, None, :] + y_pred[:, :, None])
         loss = partial_losses * y_true_[:, None, :] * (1 - y_true_[:, :, None])
         return tf.reduce_sum(loss)
+
+        # NOT WORKING :(
+        # y_pred = y_pred.numpy()
+        # rloss = 0.0
+        # nrow = y_pred.shape[1]
+        # # nrow = y_pred.get_shape().as_list()
+        # # print("HHJODS")
+        # print(nrow)
+        # print(y_pred.shape)
+        # print(type(nrow))
+        # # if nrow is None:
+        # #     print("Error")
+        # #     return 0
+        # # if type(nrow) is not int:
+        #     # return 10
+        # for i in range(nrow):
+        #     correct = tf.where(y_true[i] == 1)[0]
+        #     # print(tf.where(y_true[i] == 0))
+        #     incorrect = tf.where(y_true[i] == 0)
+        #     inv_ranks = tf.argsort(y_pred[i])
+        #     if (tf.size(correct) == 0 or tf.size(incorrect) == 0):
+        #         continue  # rank loss = 0
+
+        #     nincorrect = 0.0
+        #     # print("correct: ", correct)
+        #     # print("incorrect: ", incorrect)
+        #     for l_a in correct:
+        #         for l_b in incorrect:
+        #             # inv_ranks = tf.cast(inv_ranks, tf.int64)
+        #             # print("vals: ", l_a , " ",  l_b)
+        #             l_a_ = tf.cast(l_a, tf.int32)
+        #             l_b_ = tf.cast(l_b, tf.int32)
+        #             # print(inv_ranks)
+        #             # print(l_a_)
+        #             # test = tf.reduce_sum(l_a).numpy
+        #             # print(test)
+        #             l_a_where =  tf.cast(tf.where(tf.equal(inv_ranks, l_a_))[0][0], tf.int32)
+        #             rank_l_a = tf.size(inv_ranks) - l_a_where
+
+        #             l_b_where =  tf.cast(tf.where(tf.equal(inv_ranks, l_b_))[0][0], tf.int32)
+        #             rank_l_b = tf.size(inv_ranks) - l_b_where
+
+        #             # print("rank_l_a: ",rank_l_a)
+        #             # print("rank_l_b: ",rank_l_b)
+
+        #             # rank_l_b = tf.size(inv_ranks) - tf.where(tf.equal(inv_ranks, l_b_))[0][0]
+        #             # rank_l_a = tf.size(inv_ranks) - tf.where(tf.equal(inv_ranks, l_a_))[0][0]
+        #             # rank_l_b = tf.size(inv_ranks) - tf.where(tf.equal(inv_ranks, l_b_))[0][0]
+        #             # rank_l_a = tf.size(inv_ranks) - tf.where(inv_ranks == l_a)[0][0]
+        #             # rank_l_b = tf.size(insv_ranks) - tf.where(inv_ranks == l_b)[0][0]
+                    
+        #             if (rank_l_a > rank_l_b): nincorrect += 1
+        #     denom_calc  = tf.cast((tf.size(correct) * tf.size(incorrect)), tf.float64)
+        #     # print("t: ",t)
+            
+        #     # print("nincorrect: ", nincorrect)
+        #     rloss_i = nincorrect / denom_calc
+        #     # print("rloss_i: ", rloss_i)
+        #     rloss += rloss_i
+        #     # print("rloss: ", rloss)
+        #     # print("")
+        # rloss /= nrow
+        # return rloss    
     
     def coverage_error(self, y_true, y_pred):
+        y_true = tf.cast(y_true, tf.bool)
         y_pred_masked = tf.ragged.boolean_mask(y_pred, y_true)
         y_min_relevant = tf.reduce_min(y_pred_masked, axis=1)
         y_min_relevant = tf.reshape(y_min_relevant, [tf.shape(y_pred)[0], 1])

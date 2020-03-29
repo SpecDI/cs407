@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 
 # Python module import
+from Metrics import RankMetrics
 from Metrics import MetricsAtTopK
 from Loss import LossFunctions
 
@@ -46,12 +47,14 @@ class TrainingSuite:
     def evaluation(self, model, weight_file):
         metrics = MetricsAtTopK(k=2)
         losses = LossFunctions()
+        rank_metrics = RankMetrics()
 
         model.compile(loss=losses.weighted_binary_crossentropy, optimizer='adam', metrics=['accuracy', 
                                                                                             metrics.recall_at_k, 
                                                                                             metrics.precision_at_k, 
                                                                                             metrics.f1_at_k, 
-                                                                                            losses.hamming_loss])
+                                                                                            losses.hamming_loss,
+                                                                                            rank_metrics.rank_loss])
 
         logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
         tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
