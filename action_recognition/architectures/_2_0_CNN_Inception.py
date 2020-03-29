@@ -2,15 +2,15 @@
 Version 2.0 for the CNN
 """
 # Keras imports 
-from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, Lambda
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
-from tensorflow.python.keras import backend as K
-from tensorflow.keras.applications import InceptionV3
+from keras import Model
+from keras.layers import Dense, Dropout, Activation, Flatten, Lambda
+from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
+from keras import backend as K
+from keras.applications.inception_v3 import InceptionV3, preprocess_input
 
 # Data paths
-TRAIN_DIR = '../../action-tubes/training/all/completed/'
-TEST_DIR = '../../action-tubes/test/'
+TRAIN_DIR = '../../action-tubes/completed/'
+TEST_DIR = '../../action-tubes/completed/'
 
 # Constants
 WEIGHT_FILE_NAME = "_2_0_cnn_inception"
@@ -21,7 +21,7 @@ FRAME_LENGTH = 244
 FRAME_WIDTH = 244
 FRAME_NUM = 16
 CHANNELS = 3
-CLASSES = 13
+CLASSES = 11
 
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     from training import TrainingSuite
 
-    training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
+    training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM, preprocess_input)
     model = cnn(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
 
-    training_suite.evaluation(model, WEIGHT_FILE_NAME, gen_logs = False)
+    training_suite.evaluation(model, WEIGHT_FILE_NAME)

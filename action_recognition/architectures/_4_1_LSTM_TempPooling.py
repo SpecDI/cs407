@@ -71,4 +71,4 @@ if __name__ == "__main__":
     training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM)
     model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
 
-    training_suite.evaluation(model, WEIGHT_FILE_NAME, gen_logs = False)
+    training_suite.evaluation(model, WEIGHT_FILE_NAME)

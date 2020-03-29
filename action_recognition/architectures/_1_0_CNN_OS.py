@@ -2,12 +2,14 @@
 Version 2.0 for the CNN
 """
 # Keras imports 
-from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, Lambda
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
-from tensorflow.python.keras import backend as K
+from keras import Model
+from keras.layers import Dense, Dropout, Activation, Flatten, Lambda, LSTM
+from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
+from keras import backend as K
 # from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
-from tensorflow.keras.applications.resnet import ResNet50, preprocess_input
+from keras.applications.resnet import ResNet50, preprocess_input
+
+from temporal_pooling import TemporalMaxPooling2D
 
 # Data paths
 # TRAIN_DIR = '../../action-tubes/training/all/completed/'

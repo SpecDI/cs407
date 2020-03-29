@@ -12,8 +12,8 @@ from VideoFrameGenerator_2_1_0 import ImageDataGenerator
 
 # Tensorflow imports
 import tensorflow as tf
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from tensorflow.keras.optimizers import SGD, Adagrad
+from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from keras.optimizers import SGD, Adagrad
 
 """
 Python class for training and evaluating keras models.
