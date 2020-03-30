@@ -11,8 +11,10 @@ from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from temporal_pooling import TemporalMaxPooling2D
 
 # Data paths
-TRAIN_DIR = '../../action-tubes/training/all/completed/'
-TEST_DIR = '../../action-tubes/test/'
+# TRAIN_DIR = '../../action-tubes/training/all/completed/'
+# TEST_DIR = '../../action-tubes/test/'
+TRAIN_DIR = '../../action-tubes/completed/'
+TEST_DIR = '../../action-tubes/completed/'
 
 # Constants
 WEIGHT_FILE_NAME = "_5_0_CNN_LSTM"
@@ -23,7 +25,7 @@ FRAME_LENGTH = 244
 FRAME_WIDTH = 244
 FRAME_NUM = 32
 CHANNELS = 3
-CLASSES = 13
+CLASSES = 11
 
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
@@ -42,14 +44,18 @@ def spatial_stream(input_shape):
     for layer in inception.layers:
         layer.trainable = False 
 
-    cnn = Model(inputs=inception.input, outputs=inception.output)
-    #cnn.summary()
+    x = Dense(512, activation = 'relu')(inception.output)
+    
+    cnn = Model(inputs=inception.input, outputs=x)
+    cnn.summary()
 
     input_ = Input(shape=input_shape)
     x = TimeDistributed(cnn)(input_)
 
     model = Model(inputs=[input_], outputs=x)
     #model.summary()
+    
+    
 
     return model
     
@@ -58,10 +64,11 @@ def TS_CNN_LSTM(input_shape, classes):
     sStream = spatial_stream(input_shape)
     
     # Create LSTM temporal stream
-    x = Dropout(0.15)(sStream.output)
-    x = Bidirectional(LSTM(512, recurrent_dropout=0.15, return_sequences=True))(x)
+    x = Dropout(0.5)(sStream.output)
+    x = Bidirectional(LSTM(128, recurrent_dropout=0.5, return_sequences=True))(x)
+    x = Bidirectional(LSTM(128, recurrent_dropout=0.5, return_sequences=True))(x)
     x = TemporalMaxPooling2D()(x)
-    x = Dropout(0.15)(x)
+    x = Dropout(0.5)(x)
     tStream = Model(inputs=sStream.input, outputs=x)
     
     # Create full 2 stream network
