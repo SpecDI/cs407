@@ -11,10 +11,10 @@ from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from temporal_pooling import TemporalMaxPooling2D
 
 # Data paths
-# TRAIN_DIR = '../../action-tubes/training/all/completed/'
-# TEST_DIR = '../../action-tubes/test/'
-TRAIN_DIR = '../../action-tubes/completed/'
-TEST_DIR = '../../action-tubes/completed/'
+TRAIN_DIR = '../../action-tubes/training/all/completed/'
+TEST_DIR = '../../action-tubes/test/'
+# TRAIN_DIR = '../../action-tubes/completed/'
+# TEST_DIR = '../../action-tubes/completed/'
 
 # Constants
 WEIGHT_FILE_NAME = "_5_0_CNN_LSTM"
@@ -25,7 +25,7 @@ FRAME_LENGTH = 244
 FRAME_WIDTH = 244
 FRAME_NUM = 32
 CHANNELS = 3
-CLASSES = 11
+CLASSES = 13
 
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
