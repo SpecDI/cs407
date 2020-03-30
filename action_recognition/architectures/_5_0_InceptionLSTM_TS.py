@@ -96,7 +96,7 @@ def TS_CNN_LSTM(input_shape, classes):
     
     # Create LSTM temporal stream
     x = Dropout(0.15)(sStream.output)
-    x = Bidirectional(LSTM(512, recurrent_dropout=0.15, return_sequences=True))(x)
+    x = Bidirectional(LSTM(256, recurrent_dropout=0.15, return_sequences=True))(x)
     x = TemporalMaxPooling2D()(x)
     x = Dropout(0.15)(x)
     tStream = Model(inputs=sStream.input, outputs=x)
