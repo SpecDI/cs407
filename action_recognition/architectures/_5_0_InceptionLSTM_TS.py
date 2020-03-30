@@ -52,43 +52,6 @@ def spatial_stream(input_shape):
     #model.summary()
 
     return model
-
-def temporal_stream(input_shape):
-    """
-    Model definition.
-
-    returns: Model (uncompiled)
-    """    
-    x = Dropout(0.15)(spatial_model.output)
-    x = Bidirectional(LSTM(512, recurrent_dropout=0.15, return_sequences=True))(x)
-    x = TemporalMaxPooling2D()(x)
-    x = Dropout(0.15)(x)
-    
-    model = Model(inputs=spatial_model.input, outputs=x)
-    #model.summary()
-    
-    return model
-
-def CNN_LSTM(input_shape, classes):
-    sStream = spatial_stream(input_shape)
-    sStream.summary()
-    tStream = temporal_stream(input_shape)
-    tStream.summary()
-    
-    spatial_average = Lambda(function=lambda x: K.mean(x, axis=1),
-                   output_shape=lambda shape: (shape[0],) + shape[2:])(sStream.output)
-    spatial_out = Dense(classes, activation = 'sigmoid')(spatial_average)
-    
-    temporal_out = Dense(classes, activation = 'sigmoid')(tStream.output)
-    
-    averaged = Average()([spatial_out, temporal_out])
-    
-    out = Dense(classes, activation = 'sigmoid')(averaged)
-    model = Model(inputs=[sStream.input, tStream.input], outputs=out)
-    
-    model.summary()
-    
-    return model
     
 def TS_CNN_LSTM(input_shape, classes):
     # Get inception spatial stream
@@ -96,7 +59,9 @@ def TS_CNN_LSTM(input_shape, classes):
     
     # Create LSTM temporal stream
     x = Dropout(0.15)(sStream.output)
-    x = Bidirectional(LSTM(256, recurrent_dropout=0.15, return_sequences=True))(x)
+    x = Bidirectional(LSTM(128, recurrent_dropout=0.15, return_sequences=False))(x)
+    x = Bidirectional(LSTM(128, recurrent_dropout=0.15, return_sequences=False))(x)
+    x = Bidirectional(LSTM(128, recurrent_dropout=0.15, return_sequences=True))(x)
     x = TemporalMaxPooling2D()(x)
     x = Dropout(0.15)(x)
     tStream = Model(inputs=sStream.input, outputs=x)
