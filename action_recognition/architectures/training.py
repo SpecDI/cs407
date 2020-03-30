@@ -76,4 +76,5 @@ class TrainingSuite:
                 epochs=self.epochs,
                 validation_data=self.test_data,
                 validation_steps=self.test_data.samples // self.batch_size,
+                validation_freq=5,
                 callbacks=callbacks)
