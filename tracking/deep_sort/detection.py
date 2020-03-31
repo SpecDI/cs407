@@ -47,3 +47,13 @@ class Detection(object):
         ret[:2] += ret[2:] / 2
         ret[2] /= ret[3]
         return ret
+
+    def rescale(self, xScale, yScale, diffx, diffy):
+
+        xStart = (self.tlwh[0] + diffx) * xScale #+ x1
+        yStart = (self.tlwh[1] + diffy)  * yScale #+ y1
+
+        width = (self.tlwh[2]) * xScale #+ x2
+        height = (self.tlwh[3]) * yScale #+ y2
+        self.tlwh = np.asarray([xStart, yStart, width, height], dtype=np.float32)
+        return self
