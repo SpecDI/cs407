@@ -254,7 +254,7 @@ def main(yolo, hide_window, weights_file):
 
     processedTracks = []
 
-    skip = 2
+    skip = 3
     while video_capture.more():
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
