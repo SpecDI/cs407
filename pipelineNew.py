@@ -389,7 +389,7 @@ def main(yolo, hide_window, weights_file):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    video_capture.release()
+    video_capture.stop()
     out.release()
     list_file.close()
     cv2.destroyAllWindows()
