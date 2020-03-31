@@ -48,7 +48,7 @@ class TrainingSuite:
         losses = LossFunctions()
         optimiser = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
-        model.compile(loss="binary_crossentropy", optimizer=optimiser, metrics=[losses.hamming_loss,
+        model.compile(loss=losses.weighted_binary_crossentropy, optimizer=optimiser, metrics=[losses.hamming_loss,
                                                                                 rank_metrics.one_error,
                                                                                 metrics.recall_at_k, 
                                                                                 metrics.precision_at_k, 

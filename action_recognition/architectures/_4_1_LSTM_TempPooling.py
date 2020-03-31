@@ -62,6 +62,8 @@ def cnn_lstm(input_shape, kernel_shape, pool_shape, classes):
 
     model.add(Dense(classes, name='output', activation='sigmoid'))
     
+    model.summary()
+    
     return model
 
 if __name__ == "__main__":
