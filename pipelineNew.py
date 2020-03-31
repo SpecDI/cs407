@@ -75,7 +75,10 @@ def process_batch(batch):
 
     # Pad images
     for img in batch:
-        processed_batch.append(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH)))
+        try:
+            processed_batch.append(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH)))
+        except:
+            processed_batch.append(processed_batch[-1])
 
     return np.asarray(processed_batch)
 
@@ -251,7 +254,7 @@ def main(yolo, hide_window, weights_file):
 
     processedTracks = []
 
-    skip = 3
+    skip = 2
     while video_capture.more():
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
@@ -383,7 +386,7 @@ def main(yolo, hide_window, weights_file):
 
 
         fps  = ( fps + (1./(time.time()-t1)) ) / 2
-        print("fps= %f"%(fps))
+        print("fps= %f"%(fps/skip))
 
         # Press Q to stop!
         if cv2.waitKey(1) & 0xFF == ord('q'):
