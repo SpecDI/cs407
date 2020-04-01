@@ -1,8 +1,9 @@
 import tensorflow as tf
 tf.enable_eager_execution()
 K = tf.keras.backend
-from sklearn.metrics import label_ranking_loss
-import numpy as np
+
+#from sklearn.metrics import label_ranking_loss
+#import numpy as np
 
 class RankMetrics:
     def __init__(self):
@@ -54,6 +55,7 @@ class RankMetrics:
         # with tf.Session() as sess:  print(tf.reduce_sum(loss).numpy()) 
         # print("TESTING RANK LOSS")
         return tf.reduce_sum(loss)
+
         # 
     	#### WORKING VERSION USING NUMPY #####
         # rloss = 0.0
