@@ -42,28 +42,33 @@ class TrainingSuite:
                                             frames_per_step=self.frame_num, shuffle=True)  
         return train_data, test_data
 
-    def evaluation(self, model, weight_file):
+    def evaluation(self, model, weight_file, gen_logs = True):
         metrics = MetricsAtTopK(k=3)
         rank_metrics = RankMetrics()
         losses = LossFunctions()
         optimiser = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
-        model.compile(loss="binary_crossentropy", optimizer=optimiser, metrics=[losses.hamming_loss,
+        model.compile(loss=losses.weighted_binary_crossentropy, optimizer=optimiser, metrics=[losses.hamming_loss,
                                                                                 rank_metrics.one_error,
                                                                                 metrics.recall_at_k, 
                                                                                 metrics.precision_at_k, 
                                                                                 metrics.f1_at_k])
-
-        logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
-                                                          histogram_freq=1,
-                                                          write_graph=True,
-                                                          write_images=True,
-                                                          embeddings_freq=0)
         
         mcp_save = ModelCheckpoint('weights/' + weight_file + '.hdf5', save_best_only=True, monitor='val_f1_at_k', mode='max')
         es = EarlyStopping(monitor='val_f1_at_k', mode='max', patience=10)
         reduce_lr = ReduceLROnPlateau(monitor='val_f1_at_k', mode='max', factor=0.2, patience=5, verbose=1)
+        
+        callbacks = [mcp_save, es, reduce_lr]
+
+        if gen_logs:
+            logdir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
+            tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir,
+                                                            histogram_freq=1,
+                                                            write_graph=True,
+                                                            write_images=True,
+                                                            embeddings_freq=0)
+            callbacks.append(tensorboard_callback)
+        
         
         model.fit_generator(
                 self.train_data,
@@ -71,4 +76,5 @@ class TrainingSuite:
                 epochs=self.epochs,
                 validation_data=self.test_data,
                 validation_steps=self.test_data.samples // self.batch_size,
-                callbacks=[mcp_save, es, tensorboard_callback, reduce_lr])
+                validation_freq=5,
+                callbacks=callbacks)
