@@ -5,6 +5,7 @@ import shutil
 import warnings
 import sys
 warnings.filterwarnings('ignore')
+sys.path.append('./action_recognition/architectures')
 
 import argparse
 from timeit import time
@@ -26,8 +27,9 @@ from tracking.deep_sort.detection import Detection as ddet
 from tensorflow.python.keras import backend as K
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
+from keras.applications.vgg16 import preprocess_input
 
-from action_recognition.architectures._1_2_LSTM_OS import cnn_lstm
+from action_recognition.architectures._5_5_TransferLSTM_TS import TS_CNN_LSTM
 from action_recognition.architectures.Metrics import MetricsAtTopK
 from action_recognition.architectures.Loss import LossFunctions
 
@@ -35,9 +37,9 @@ from action_recognition.architectures.Loss import LossFunctions
 from imutils.video import FileVideoStream
 
 # Constant variables
-FRAME_LENGTH = 200
-FRAME_WIDTH = 200
-FRAME_NUM = 16
+FRAME_LENGTH = 80
+FRAME_WIDTH = 80
+FRAME_NUM = 64
 
 CHANNELS = 3
 CLASSES = 13
@@ -76,7 +78,7 @@ def process_batch(batch):
     # Pad images
     for img in batch:
         try:
-            processed_batch.append(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH)))
+            processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
         except:
             processed_batch.append(processed_batch[-1])
 
@@ -146,7 +148,7 @@ def processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMa
 
         # Add frame segment to track dict
         block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
-        track_tubeMap[trackId].append(block / 255.0)
+        track_tubeMap[trackId].append(block)
 
         # Check size of track bucket
         if len(track_tubeMap[trackId]) == FRAME_NUM:
@@ -201,7 +203,7 @@ def main(yolo, hide_window, weights_file):
     #     }
     # )
 
-    model = cnn_lstm(INPUT_SHAPE, KERNEL_SHAPE, POOL_SHAPE, CLASSES)
+    model = TS_CNN_LSTM(INPUT_SHAPE, CLASSES)
     model.load_weights('action_recognition/architectures/weights/' + weights_file + '.hdf5')
 
     metrics = MetricsAtTopK(k=2)
