@@ -83,25 +83,6 @@ def TS_CNN_LSTM(input_shape, kernel_shape, pool_shape, classes):
     model.summary()
     
     return model
-
-def cnn(input_shape, kernel_shape, pool_shape, classes):
-    spatial_model = Sequential()
-    spatial_model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape), input_shape=input_shape))
-    spatial_model.add(TimeDistributed(BatchNormalization()))
-    spatial_model.add(TimeDistributed(Activation("relu")))
-    spatial_model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
-
-    spatial_model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape)))
-    spatial_model.add(TimeDistributed(BatchNormalization()))
-    spatial_model.add(TimeDistributed(Activation("relu")))
-    spatial_model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
-
-    spatial_model.add(TimeDistributed(Conv2D(filters=64, kernel_size=kernel_shape)))
-    spatial_model.add(TimeDistributed(BatchNormalization()))
-    spatial_model.add(TimeDistributed(Activation("relu")))
-    spatial_model.add(TimeDistributed(MaxPooling2D(pool_size=pool_shape)))
-
-    spatial_model.add(TimeDistributed(Flatten()))
     
 
 if __name__ == "__main__":
