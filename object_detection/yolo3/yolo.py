@@ -23,8 +23,8 @@ class YOLO(object):
         self.model_path = 'object_detection/model_data/yolo.h5'
         self.anchors_path = 'object_detection/model_data/yolo_anchors.txt'
         self.classes_path = 'object_detection/model_data/coco_classes.txt'
-        self.score = 0.5
-        self.iou = 0.5
+        self.score = 0.1
+        self.iou = 0.1
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
