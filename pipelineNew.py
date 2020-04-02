@@ -36,6 +36,12 @@ from action_recognition.architectures.Loss import LossFunctions
 
 from imutils.video import FileVideoStream
 
+object_detection_file = None
+object_tracking_directory = None
+action_recognition_directory = None
+batch_number = dict()
+current_frame = 0
+
 # Constant variables
 FRAME_LENGTH = 80
 FRAME_WIDTH = 80
@@ -66,7 +72,17 @@ def parse_args():
         "--weights_file", help="Name of weight file to be loaded for the action recognition model",
         required = True)
 
-    return parser.parse_args()
+    parser.add_argument(
+        "--test_mode", help="Boolean. If true - individual component outputs stored.",
+        type = bool,
+        default = False
+    )
+
+    parser.add_argument(
+        "--test_output", help="Output directory for testing information, required if --test_mode=True",
+        type = str
+    )
+    return parser
 
 def hamming_loss(y_true, y_pred, tval = 0.4):
     tmp = K.abs(y_true - y_pred)
@@ -127,7 +143,9 @@ def calculateLocation(currentXs, currentYs):
         return None
     return [min(currentXs), min(currentYs), max(currentXs), max(currentYs)]
 
-def processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMap, model):
+def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode):
+    global current_frame
+    location = locations.pop(0)
     frame = processedFrames.pop(0)
     tracks = processedTracks.pop(0)
 
@@ -149,9 +167,28 @@ def processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMa
         # Add frame segment to track dict
         block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
         track_tubeMap[trackId].append(block)
+    
+        if test_mode:
+            track_directory = object_tracking_directory + "/" + str(trackId)
+            if not os.path.exists(track_directory):
+                os.mkdir(track_directory)
+            cv2.imwrite(track_directory + "/" + str(current_frame) + ".jpg", block) 
 
         # Check size of track bucket
         if len(track_tubeMap[trackId]) == FRAME_NUM:
+            if test_mode:
+                global batch_number
+                if trackId in batch_number:
+                    batch_number[trackId] += 1
+                else:
+                    batch_number[trackId] = 0
+
+                recognition_directory = action_recognition_directory + "/" + str(trackId) + "_" + str(batch_number[trackId])
+
+                if not os.path.exists(recognition_directory):
+                    os.mkdir(recognition_directory)
+                for i, block in enumerate(track_tubeMap[trackId], current_frame - FRAME_NUM + 1):
+                    cv2.imwrite(recognition_directory + "/" + str(i) + ".jpg", block) 
             # Process action tube
             batch = process_batch(track_tubeMap[trackId])
             batch = batch.reshape(1, FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, 3)
@@ -166,18 +203,49 @@ def processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMa
             action_label = actions_header[preds.index(max(preds))]
             print(f"Person {trackId} is {action_label}")
 
+            if test_mode:
+                os.rename(recognition_directory,recognition_directory + "_" + action_label) 
+
             # Update map
             track_actionMap[trackId] = action_label
 
         # Update text to be appended
         append_str += ' ' + track_actionMap[trackId]
         # Create bbox and text label
-        cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
-        cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
+
+        if not test_mode:
+            cv2.rectangle(frame, (int(location[0]), int(location[1])), (int(location[2]), int(location[3])), (0,0, 255), 5)
+            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
+            cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
+    current_frame += 1
     return frame
 
 
-def main(yolo, hide_window, weights_file):
+def initialiseTestMode(video_name):
+    global object_detection_file
+    global object_tracking_directory
+    global action_recognition_directory
+
+    if not os.path.exists('results/object_detection/' + str(video_name)):
+        os.mkdir('results/object_detection/' + str(video_name))
+    object_detection_file = open('results/object_detection/' + str(video_name) + '/object_detection.txt', 'w')
+
+    if not os.path.exists('results/object_tracking/' + str(video_name)):
+        os.mkdir('results/object_tracking/' + str(video_name))
+    object_tracking_directory = 'results/object_tracking/' + str(video_name)
+
+    if not os.path.exists('results/action_recognition/' + str(video_name)):
+        os.mkdir('results/action_recognition/' + str(video_name))
+    action_recognition_directory = 'results/action_recognition/' + str(video_name)
+
+
+def main(yolo, hide_window, weights_file, test_mode, test_output):
+    if test_mode:
+        global object_detection_file
+        global object_tracking_directory
+        global action_recognition_directory
+        initialiseTestMode(test_output)
+
     print('Starting pipeline...')
 
     input_file = './web_server/input.mp4'
@@ -190,18 +258,6 @@ def main(yolo, hide_window, weights_file):
 
     metrics = MetricsAtTopK(k=2)
     losses = LossFunctions()
-
-    # Load in model
-    # model = load_model(
-    #     'action_recognition/architectures/weights/lstm_1_2.hdf5',
-    #     custom_objects={
-    #         "weighted_binary_crossentropy": losses.weighted_binary_crossentropy,
-    #         "recall_at_k": metrics.recall_at_k, 
-    #         "precision_at_k": metrics.precision_at_k, 
-    #         "f1_at_k": metrics.f1_at_k,
-    #         "hamming_loss": hamming_loss,
-    #     }
-    # )
 
     model = TS_CNN_LSTM(INPUT_SHAPE, CLASSES)
     model.load_weights('action_recognition/architectures/weights/' + weights_file + '.hdf5')
@@ -235,12 +291,12 @@ def main(yolo, hide_window, weights_file):
 
     # Define the codec and create VideoWriter object
     w = 3840
-    h = 2180
+    h = 2160
     fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
     # Build video output handler only if we are not cropping
-    out = cv2.VideoWriter(output_file, fourcc, 11, (w, h))
-    list_file = open('detection.txt', 'w')
-    frame_index = -1
+
+    if not test_mode:
+        out = cv2.VideoWriter(output_file, fourcc, 30, (w, h))
 
     fps = 0.0
     location = (0, 0)
@@ -256,6 +312,8 @@ def main(yolo, hide_window, weights_file):
 
     processedTracks = []
 
+    locations = []
+
     skip = 3
     while video_capture.more():
         frame = video_capture.read()  # frame shape 640*480*3
@@ -263,8 +321,8 @@ def main(yolo, hide_window, weights_file):
             break
         t1 = time.time()
 
-        x = 3840
-        y = 2160
+        x = w
+        y = h
 
         scaledX = 640   
         scaledY = 360
@@ -292,7 +350,12 @@ def main(yolo, hide_window, weights_file):
 
 
             boxs = yolo.detect_image(image)
-        # print("box_num",len(boxs))
+
+            if test_mode:
+                if len(boxs) != 0:
+                    for i in range(0,len(boxs)):
+                        object_detection_file.write(str(frame_number)+' ' + str(boxs[i][0]) + ' '+str(boxs[i][1]) + ' '+str(boxs[i][2]) + ' '+str(boxs[i][3]) + '\n')
+
             features = encoder(frame,boxs)
             
             # score to 1.0 here).
@@ -309,8 +372,6 @@ def main(yolo, hide_window, weights_file):
             tracker.update(detections)
 
             frame = frameCopy
-            location = rescale(location, xScale, yScale, 0, 0, True)
-            cv2.rectangle(frame, (int(location[0]), int(location[1])), (int(location[2]), int(location[3])), (0,0, 255), 2)
     
             tracks = dict()
             for track in tracker.tracks:
@@ -344,13 +405,15 @@ def main(yolo, hide_window, weights_file):
                     processedTracks.append(tracks)
                     unprocessedFrames = []
 
+                location = rescale(location, xScale, yScale, 0, 0, True)
+                locations.append(location)
                 processedFrames.append(frame)
                 processedTracks.append(secondTrack)
                 track_buffer.append(secondTrack)
 
 
             if(frame_number > skip - 1):
-                frame = processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMap, model)
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
 
 
             currentXs = []
@@ -361,31 +424,25 @@ def main(yolo, hide_window, weights_file):
                 currentXs.extend([int(bbox[0]),int(bbox[2])])
                 currentYs.extend([int(bbox[1]),int(bbox[3])])
 
-            frame_number += 1
-            if frame_number % 5 != 0:
-                location = calculateLocation(currentXs, currentYs)
-                print(location)
-
         else:
             unprocessedFrames.append(frame)
+            locations.append([0,0,0,0])
             if(frame_number > skip - 1):
-                frame = processFrame(processedFrames, processedTracks, track_tubeMap, track_actionMap, model)
-            frame_number += 1
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
 
         # Display video as processed if necessary
-        if frame_number - 1> skip - 1:
-            if not hide_window:
+        if frame_number > skip - 1:
+            if not (hide_window or test_mode):
                 cv2.imshow('', cv2.resize(frame, (1200, 675)))
+            # save a frame
+            if not test_mode:
+                out.write(frame)
 
-        # save a frame
-        out.write(frame)
-        frame_index = frame_index + 1
-        list_file.write(str(frame_index)+' ')
-        if len(boxs) != 0:
-            for i in range(0,len(boxs)):
-                list_file.write(str(boxs[i][0]) + ' '+str(boxs[i][1]) + ' '+str(boxs[i][2]) + ' '+str(boxs[i][3]) + ' ')
-        list_file.write('\n')
 
+        frame_number += 1
+        if frame_number % 5 != 0:
+            location = calculateLocation(currentXs, currentYs)
+            print(location)
 
         fps  = ( fps + (1./(time.time()-t1)) ) / 2
         print("fps= %f"%(fps/skip))
@@ -395,11 +452,20 @@ def main(yolo, hide_window, weights_file):
             break
 
     video_capture.stop()
-    out.release()
-    list_file.close()
+
+    if not test_mode:
+        out.release()
+
+
     cv2.destroyAllWindows()
+
+    if test_mode:
+        object_detection_file.close()
 
 if __name__ == '__main__':
     # Parse user provided arguments
-    args = parse_args()
-    main(YOLO(), args.hide_window, args.weights_file)
+    parser = parse_args()
+    args = parser.parse_args()
+    if (args.test_mode) and (args.test_output is None):
+        parser.error("--test_output required if --test_mode=True")
+    main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output)
