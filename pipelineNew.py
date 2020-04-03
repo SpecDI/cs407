@@ -74,7 +74,7 @@ def parse_args():
 
     parser.add_argument(
         "--test_mode", help="Boolean. If true - individual component outputs stored.",
-        type = bool,
+        action = 'store_true',
         default = False
     )
 
@@ -93,10 +93,11 @@ def process_batch(batch):
 
     # Pad images
     for img in batch:
-        try:
-            processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
-        except:
-            processed_batch.append(processed_batch[-1])
+        processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
+        # try:
+        #     processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
+        # except:
+        #     processed_batch.append(processed_batch[-1])
 
     return np.asarray(processed_batch)
 
@@ -117,7 +118,7 @@ def predict_with_uncertainty(self, model, x, n_iter=10):
 
     return prediction, uncertainty
 
-def interpolateBbox(second, first, ratio):
+def interpolateBbox(first, second, ratio):
     return (second[0] - first[0]) * ratio, (second[1] - first[1]) * ratio, (second[2] - first[2]) * ratio, (second[3] - first[3]) * ratio
 
 def rescale(bbox, xScale, yScale, diffx, diffy, up):
@@ -140,6 +141,8 @@ def rescale(bbox, xScale, yScale, diffx, diffy, up):
 
 def calculateLocation(currentXs, currentYs):
     if not(currentXs) or not(currentYs):
+        return None
+    elif len(currentXs) <=2 or len(currentYs) <= 2:
         return None
     return [min(currentXs), min(currentYs), max(currentXs), max(currentYs)]
 
@@ -166,8 +169,15 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
 
         # Add frame segment to track dict
         block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
+        # if block[0].size <=1 or block[1].size <=1:
+        #     if len(track_tubeMap[trackId]) > 0:
+        #         block = track_tubeMap[trackId][-1]
+        #     else:
+        #         continue
+
         track_tubeMap[trackId].append(block)
-    
+
+
         if test_mode:
             track_directory = object_tracking_directory + "/" + str(trackId)
             if not os.path.exists(track_directory):
@@ -214,9 +224,9 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
         # Create bbox and text label
 
         if not test_mode:
-            cv2.rectangle(frame, (int(location[0]), int(location[1])), (int(location[2]), int(location[3])), (0,0, 255), 5)
-            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
-            cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
+            frame = cv2.rectangle(frame, (int(location[0]), int(location[1])), (int(location[2]), int(location[3])), (0,0, 255), 5)
+            frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
+            frame = cv2.putText(frame, append_str,(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
     current_frame += 1
     return frame
 
@@ -238,6 +248,10 @@ def initialiseTestMode(video_name):
         os.mkdir('results/action_recognition/' + str(video_name))
     action_recognition_directory = 'results/action_recognition/' + str(video_name)
 
+def validBbox(bbox):
+    if abs(bbox[0] - bbox[2])<=1 or abs(bbox[1] - bbox[3]) <=1:
+        return False
+    return True
 
 def main(yolo, hide_window, weights_file, test_mode, test_output):
     if test_mode:
@@ -296,7 +310,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
     # Build video output handler only if we are not cropping
 
     if not test_mode:
-        out = cv2.VideoWriter(output_file, fourcc, 30, (w, h))
+        out = cv2.VideoWriter(output_file, fourcc, 20, (w, h))
 
     fps = 0.0
     location = (0, 0)
@@ -389,10 +403,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
 
                 processedFrames.append(frame)
                 processedTracks.append(tracks)
-
             else:
                 firstTrack = track_buffer.pop(0)
-                secondTrack = tracks
+                secondTrack = tracks.copy()
 
                 for i, oldFrame in enumerate(unprocessedFrames, 1):
                     tracks = dict()
@@ -401,19 +414,20 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
                             min_x, min_y, max_x, max_y = interpolateBbox(firstTrack[trackId], secondTrack[trackId], i/skip)
                             result = [x+y for x ,y in zip([min_x, min_y, max_x, max_y], firstTrack[trackId])]
                             tracks[trackId] = result
+                
                     processedFrames.append(oldFrame)
-                    processedTracks.append(tracks)
+                    processedTracks.append(tracks.copy())
                     unprocessedFrames = []
-
-                location = rescale(location, xScale, yScale, 0, 0, True)
-                locations.append(location)
                 processedFrames.append(frame)
                 processedTracks.append(secondTrack)
                 track_buffer.append(secondTrack)
 
+            location = rescale(location, xScale, yScale, 0, 0, True)
+            locations.append(location)
 
-            if(frame_number > skip - 1):
+            if(frame_number >= skip):
                 frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
+
 
 
             currentXs = []
@@ -427,16 +441,21 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
         else:
             unprocessedFrames.append(frame)
             locations.append([0,0,0,0])
-            if(frame_number > skip - 1):
+            if(frame_number >= skip):
                 frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
 
+                    #cv2.imwrite("results/frames/{}.jpg".format(frame_number), frame) 
+
         # Display video as processed if necessary
-        if frame_number > skip - 1:
-            if not (hide_window or test_mode):
-                cv2.imshow('', cv2.resize(frame, (1200, 675)))
+
             # save a frame
-            if not test_mode:
+
+        if(frame_number >= skip):
+            if not (hide_window or test_mode):
+                frame = cv2.putText(frame, str(frame_number),(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
+               # cv2.imshow('', cv2.resize(frame, (1200, 675)))
                 out.write(frame)
+
 
 
         frame_number += 1
@@ -453,6 +472,21 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
 
     video_capture.stop()
 
+    while len(processedFrames) != 0:
+        frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
+        if not (hide_window or test_mode):
+            frame = cv2.putText(frame, "processed",(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
+            #cv2.imshow('', cv2.resize(frame, (1200, 675)))
+            out.write(frame)
+
+    while len(unprocessedFrames) != 0:
+        frame = unprocessedFrames.pop()
+        if not (hide_window or test_mode):
+            frame = cv2.putText(frame, "unprocessed",(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
+            #cv2.imshow('', cv2.resize(frame, (1200, 675)))
+            out.write(frame)
+
+    
     if not test_mode:
         out.release()
 
