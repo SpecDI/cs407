@@ -57,3 +57,9 @@ class Detection(object):
         height = (self.tlwh[3]) * yScale #+ y2
         self.tlwh = np.asarray([xStart, yStart, width, height], dtype=np.float32)
         return self
+
+    def validBbox(self):
+        bbox = self.to_tlbr()
+        if abs(bbox[0] - bbox[2])<=1 or abs(bbox[1] - bbox[3]) <=1:
+            return False
+        return True

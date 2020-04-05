@@ -93,11 +93,10 @@ def process_batch(batch):
 
     # Pad images
     for img in batch:
-        processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
-        # try:
-        #     processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
-        # except:
-        #     processed_batch.append(processed_batch[-1])
+        try:
+            processed_batch.append(preprocess_input(cv2.resize(img, (FRAME_WIDTH, FRAME_LENGTH))))
+        except:
+            processed_batch.append(processed_batch[-1])
 
     return np.asarray(processed_batch)
 
@@ -169,11 +168,13 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
 
         # Add frame segment to track dict
         block = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])].copy()
-        # if block[0].size <=1 or block[1].size <=1:
-        #     if len(track_tubeMap[trackId]) > 0:
-        #         block = track_tubeMap[trackId][-1]
-        #     else:
-        #         continue
+
+        if(block.shape[0] == 0 or block.shape[1] == 0):
+            if len(track_tubeMap[trackId]) > 0:
+                block = track_tubeMap[trackId][-1]
+            else:
+                continue
+        print(block.shape)
 
         track_tubeMap[trackId].append(block)
 
@@ -253,6 +254,13 @@ def validBbox(bbox):
         return False
     return True
 
+def writeFrame(frame, out, hide_window, test_mode):
+    if not test_mode:
+        out.write(frame)
+    if not (hide_window or test_mode):
+        frame = cv2.resize(frame, (1200, 675))
+        cv2.imshow('', frame)
+
 def main(yolo, hide_window, weights_file, test_mode, test_output):
     if test_mode:
         global object_detection_file
@@ -309,8 +317,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
     fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
     # Build video output handler only if we are not cropping
 
+    out = None
     if not test_mode:
-        out = cv2.VideoWriter(output_file, fourcc, 20, (w, h))
+        out = cv2.VideoWriter(output_file, fourcc, 11, (w, h))
 
     fps = 0.0
     location = (0, 0)
@@ -328,11 +337,12 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
 
     locations = []
 
-    skip = 3
+    skip = 1
     while video_capture.more():
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
             break
+        print(frame_number)
         t1 = time.time()
 
         x = w
@@ -444,24 +454,17 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
             if(frame_number >= skip):
                 frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
 
-                    #cv2.imwrite("results/frames/{}.jpg".format(frame_number), frame) 
-
         # Display video as processed if necessary
 
             # save a frame
 
         if(frame_number >= skip):
-            if not (hide_window or test_mode):
-                frame = cv2.putText(frame, str(frame_number),(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
-               # cv2.imshow('', cv2.resize(frame, (1200, 675)))
-                out.write(frame)
-
+            writeFrame(frame, out, hide_window, test_mode)
 
 
         frame_number += 1
         if frame_number % 5 != 0:
             location = calculateLocation(currentXs, currentYs)
-            print(location)
 
         fps  = ( fps + (1./(time.time()-t1)) ) / 2
         print("fps= %f"%(fps/skip))
@@ -473,19 +476,15 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
     video_capture.stop()
 
     while len(processedFrames) != 0:
+        frame_number += 1
         frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
-        if not (hide_window or test_mode):
-            frame = cv2.putText(frame, "processed",(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
-            #cv2.imshow('', cv2.resize(frame, (1200, 675)))
-            out.write(frame)
+        writeFrame(frame, out, hide_window, test_mode)
+
 
     while len(unprocessedFrames) != 0:
+        frame_number += 1
         frame = unprocessedFrames.pop()
-        if not (hide_window or test_mode):
-            frame = cv2.putText(frame, "unprocessed",(10, 500), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255),2)
-            #cv2.imshow('', cv2.resize(frame, (1200, 675)))
-            out.write(frame)
-
+        writeFrame(frame, out, hide_window, test_mode)
     
     if not test_mode:
         out.release()
