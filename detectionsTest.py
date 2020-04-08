@@ -98,6 +98,7 @@ def main(sequence_file, detections_file, truths_file):
         test_bboxs = getBoxes(frame_number, detections)
         truth_bboxs = getBoxes(frame_number, ground_truths)
 
+        scores = compareBboxs(frame, test_bboxs, truth_bboxs)
 
         
         
