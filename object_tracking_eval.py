@@ -9,6 +9,7 @@ import pandas as pd
 import sys
 
 from tqdm import tqdm
+from colorama import Fore
 
 from scipy.stats import ks_2samp
 from scipy.stats import norm
@@ -104,8 +105,11 @@ def main(video_name, tube_name):
     
     global_diffs = []
     
+    colors = Fore.__dict__
+    colors.pop('RESET')
+    
     tube_nums = sorted([int(os.path.basename(os.path.normpath(path))) for path in glob(video_path + '**/')])
-    for tube_num in tqdm(tube_nums):
+    for tube_num in tqdm(tube_nums, bar_format="{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)):
         tube_path = video_path + str(tube_num) + '/'
         
         video_diff_list[tube_num] = eval_tube(tube_path)
