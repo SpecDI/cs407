@@ -89,6 +89,8 @@ def compareBboxs(frame, test_bboxs, truth_bboxs):
     for truth_bbox in truth_bboxs:
         test_bbox = closestBbox(truth_bbox, test_bboxs)
 
+        if not test_bbox:
+            return 0
         score = computeIou(test_bbox, truth_bbox)
 
         scores.append(score)
@@ -118,10 +120,6 @@ def main(sequence_file, location):
         test_bboxs = getBoxes(frame_number, detections)
         truth_bboxs = getBoxes(frame_number, ground_truths)
         
-        if len(test_bboxs) == 0 or len(truth_bboxs) == 0:
-            frame_number += 1
-            continue
-
         scores.extend(compareBboxs(frame, test_bboxs, truth_bboxs))
 
 
