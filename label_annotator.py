@@ -48,8 +48,6 @@ def main(sequence_file, location):
     frame_number = 0
     video_capture = cv2.VideoCapture(sequence_file)
 
-
-    scores = []
     while video_capture.isOpened():
         ret, frame = video_capture.read()  # frame shape 640*480*3
         if ret != True:
