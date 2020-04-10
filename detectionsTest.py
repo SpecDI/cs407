@@ -8,9 +8,9 @@ from PIL import Image
 
 from math import sqrt
 from scipy import spatial
-
+import random
 import argparse
-
+import time
 def parse_args():
     """ Parse command line arguments.
     """
@@ -20,11 +20,7 @@ def parse_args():
         default = None,
         required=True)
     parser.add_argument(
-        "--detections_file", help="Path to file containing bboxes",
-        default = None,
-        required=True)
-    parser.add_argument(
-        "--truths_file", help="Path to file containing truth bboxes",
+        "--location", help="Path to file containing bboxes",
         default = None,
         required=True)
     return parser.parse_args()
@@ -33,10 +29,13 @@ def getBoxes(frame_number, detections):
     bboxs = []
     for detection in detections:
         test = detection.split()
-        if test[0] == frame_number:
-            bboxs.append([test[1], test[2], test[3], test[4]])
+
+        if(len(test) > 5):
+            if test[5] == str(frame_number):
+                bboxs.append([int(test[1]), int(test[2]), int(test[3]), int(test[4])])
         else:
-            break
+            if test[0] == str(frame_number):
+                bboxs.append([int(test[1]), int(test[2]), int(test[3]), int(test[4])])
     return bboxs
 
 def calculateCentre(bbox):
@@ -49,8 +48,7 @@ def calculateCentre(bbox):
 def closestBbox(bbox, truth_bboxs):
     centre = calculateCentre(bbox)
 
-    truth_centres = map(calculateCentre, truth_bboxs)
-
+    truth_centres = list(map(calculateCentre, truth_bboxs))
 
     minimum = float('inf')
 
@@ -59,29 +57,49 @@ def closestBbox(bbox, truth_bboxs):
         dist = sqrt((centre[0] - truth_centre[0])**2 + (centre[1] - truth_centre[1])**2)
         if dist < minimum:
             closest_bbox = truth_bboxs[i]
+            minimum = dist
+        
 
 
     return closest_bbox
 
-def computeMAP(block1, block2):
-    return 0
+def computeIou(truth_bbox, pred_bbox):
+	# determine the (x, y)-coordinates of the intersection rectangle
+    xA = max(truth_bbox[0], pred_bbox[0])
+    yA = max(truth_bbox[1], pred_bbox[1])
+    xB = min(truth_bbox[2], pred_bbox[2])
+    yB = min(truth_bbox[3], pred_bbox[3])
+    # compute the area of intersection rectangle
+    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+    # compute the area of both the prediction and ground-truth
+    # rectangles
+    boxAArea = (truth_bbox[2] - truth_bbox[0] + 1) * (truth_bbox[3] - truth_bbox[1] + 1)
+    boxBArea = (pred_bbox[2] - pred_bbox[0] + 1) * (pred_bbox[3] - pred_bbox[1] + 1)
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+    # return the intersection over union value
+
+    print(iou)
+    return iou
 
 def compareBboxs(frame, test_bboxs, truth_bboxs):
     scores = []
-    for test in test_bboxs:
-        truth = closestBbox(test, truth_bboxs)
+    for truth_bbox in truth_bboxs:
+        test_bbox = closestBbox(truth_bbox, test_bboxs)
 
-        test_block = frame[int(test[1]):int(test[3]), int(test[0]):int(test[2])].copy()
-        truth_block = frame[int(truth[1]):int(truth[3]), int(truth[0]):int(truth[2])].copy()
-
-        score = computeMAP(test_block, truth_block)
+        score = computeIou(test_bbox, truth_bbox)
 
         scores.append(score)
     return scores
 
 
-def main(sequence_file, detections_file, truths_file):
+def main(sequence_file, location):
 
+
+    detections_file = "results/object_detection/{}/object_detection.txt".format(location)
+    truths_file = "results/object_detection/{}/ground_truths.txt".format(location)
 
     detections = open(detections_file, "r").readlines()
     ground_truths = open(truths_file, "r").readlines()
@@ -90,15 +108,22 @@ def main(sequence_file, detections_file, truths_file):
     video_capture = cv2.VideoCapture(sequence_file)
 
 
+    scores = []
     while video_capture.isOpened():
+        print(frame_number)
         ret, frame = video_capture.read()  # frame shape 640*480*3
         if ret != True:
             break
 
         test_bboxs = getBoxes(frame_number, detections)
         truth_bboxs = getBoxes(frame_number, ground_truths)
+        
+        if len(test_bboxs) == 0 or len(truth_bboxs) == 0:
+            frame_number += 1
+            continue
 
-        scores = compareBboxs(frame, test_bboxs, truth_bboxs)
+        scores.extend(compareBboxs(frame, test_bboxs, truth_bboxs))
+
 
         
         
@@ -107,9 +132,10 @@ def main(sequence_file, detections_file, truths_file):
             break
     video_capture.release()
 
+    print(sum(scores) / len(scores))
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(args.sequence_file, args.detections_file, args.truths_file)
+    main(args.sequence_file, args.location)
