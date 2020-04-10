@@ -1,28 +1,17 @@
-from operator import truediv, add
-
 from glob import glob
 import argparse
-from PIL import Image
 import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
 
 from tqdm import tqdm
 from colorama import Fore
 
-from scipy.stats import ks_2samp
-from scipy.stats import norm
-from scipy.stats import wasserstein_distance as wd
-
 import cv2
-
+from PIL import Image
 from matplotlib import pyplot as plt
-
-
-# Implemente KS with channels
-# Try a local descriptor e.g., SIFT and SURF
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Similarity measure")
@@ -37,7 +26,7 @@ def parse_args():
     return parser.parse_args()
 
 def compute_similarity(im1, im2, metric):
-    # Compute the image histograms
+    # Compute histograms over all 3 channels (bgr)
     scores = []
     
     for i in range(3):
@@ -46,11 +35,13 @@ def compute_similarity(im1, im2, metric):
         
         scores.append(cv2.compareHist(hist1, hist2, metric))
     
+    # Average the score over all channels
     return np.mean(scores)
 
 def eval_tube(tube_path, test_mode = False):
     tube_frames = []
     
+    # Extract and sort the frame ids
     frame_nums = sorted([int(os.path.splitext(os.path.basename(file_path))[0]) for file_path in glob(tube_path + '*.jpg')])
     for frame_num in frame_nums:
         # Compute frame path
@@ -59,9 +50,7 @@ def eval_tube(tube_path, test_mode = False):
         # Load frame
         tube_frames.append(np.asarray(Image.open(frame_path)))
     
-    
-    # Iterate over all frames -1
-    # Compute similarity
+    # List of computed pair-wise differences
     diff_list = []
     
     for i in range(len(tube_frames) - 1):
@@ -71,7 +60,7 @@ def eval_tube(tube_path, test_mode = False):
         # Compute difference
         diff_list.append(compute_similarity(im1, im2, cv2.HISTCMP_BHATTACHARYYA))
         
-        # Display them
+        # Display them only in test mode
         if test_mode:
             fig = plt.figure(figsize = (10, 10))
             plt.subplot(2, 2, 1)
@@ -91,27 +80,31 @@ def eval_tube(tube_path, test_mode = False):
             plt.hist(im2.ravel(),256,[0,256])
             
             plt.show()
+    
     return diff_list
         
 
 def main(video_name, tube_name):
     video_path = f'./results/object_tracking/{video_name}/'
     
-    if(tube_name is not None):
+    # In test mode, evaluate only the specified tube and stop
+    if tube_name is not None:
         print(eval_tube(video_path + tube_name + '/', True))
         sys.exit()
-        
+    
+    # Tube-wise diff lists dictionary
     video_diff_list = {}
     
+    # All computed pair-wise differences
     global_diffs = []
     
-    colors = Fore.__dict__
-    colors.pop('RESET')
-    
+    # Order tube paths by tube id
     tube_nums = sorted([int(os.path.basename(os.path.normpath(path))) for path in glob(video_path + '**/')])
     for tube_num in tqdm(tube_nums, bar_format="{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)):
+        # Build tube path
         tube_path = video_path + str(tube_num) + '/'
         
+        # Evaluate tube and store results
         video_diff_list[tube_num] = eval_tube(tube_path)
         global_diffs.extend(video_diff_list[tube_num])
     
@@ -132,6 +125,7 @@ def main(video_name, tube_name):
         # Standard deviation
         tube_std = np.std(tube_diff_list)
         
+        # Append new row
         df.loc[len(df)] = [key, tube_length, tube_mean, tube_min, tube_max, tube_std]
         
     print(df)
