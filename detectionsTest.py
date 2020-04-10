@@ -90,7 +90,8 @@ def compareBboxs(frame, test_bboxs, truth_bboxs):
         test_bbox = closestBbox(truth_bbox, test_bboxs)
 
         if not test_bbox:
-            return 0
+            scores.append(0)
+            continue
         score = computeIou(test_bbox, truth_bbox)
 
         scores.append(score)
