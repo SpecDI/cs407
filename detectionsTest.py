@@ -81,7 +81,8 @@ def computeIou(truth_bbox, pred_bbox):
     iou = interArea / float(boxAArea + boxBArea - interArea)
     # return the intersection over union value
 
-    print(iou)
+    if iou > 0.4:
+        return 1
     return iou
 
 def compareBboxs(frame, test_bboxs, truth_bboxs):
@@ -121,6 +122,13 @@ def main(sequence_file, location):
         test_bboxs = getBoxes(frame_number, detections)
         truth_bboxs = getBoxes(frame_number, ground_truths)
         
+
+        for bbox in test_bboxs:
+            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
+        for bbox in truth_bboxs:
+            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
+
+        cv2.imshow('', cv2.resize(frame, (1200, 675)))
         scores.extend(compareBboxs(frame, test_bboxs, truth_bboxs))
 
 
