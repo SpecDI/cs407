@@ -86,6 +86,11 @@ def parse_args():
         action = 'store_true',
         default = False
     )
+    
+    parser.add_argument(
+        "--sourceDir_path", help="Path to the directory containing the input videos. Defaults to web_server",
+        required = True
+    )
     return parser
 
 def hamming_loss(y_true, y_pred, tval = 0.4):
@@ -296,7 +301,7 @@ def writeFrame(frame, out, hide_window, test_mode):
         frame = cv2.resize(frame, (1200, 675))
         cv2.imshow('', frame)
 
-def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian):
+def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, input_file):
     if test_mode:
         global object_detection_file
         global object_tracking_directory
@@ -305,8 +310,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian):
 
     print('Starting pipeline...')
 
-    input_file = './web_server/input.mp4'
-    output_file = './web_server/output.avi'
+    # Define output path based on file name and web_server dir
+    file_name = os.path.splitext(os.path.basename(input_file))[0]
+    output_file = f'./web_server/output_{file_name}.avi'
 
     # Definition of the parameters
     max_cosine_distance = 0.3
@@ -524,4 +530,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if (args.test_mode) and (args.test_output is None):
         parser.error("--test_output required if --test_mode=True")
-    main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian)
+    
+    # Get file paths
+    file_paths = glob.glob(args.sourceDir_path + "*.mp4")
+    print('\nDiscovered files:')
+    for file in file_paths:
+        print(file)
+        
+    for video_path in file_paths:
+        print(f'Processing: {video_path}\n')
+        main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian, video_path)
