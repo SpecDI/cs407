@@ -30,8 +30,6 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.vgg16 import preprocess_input
 
 from action_recognition.architectures._5_5_TransferLSTM_TS import TS_CNN_LSTM
-from action_recognition.architectures.Metrics import MetricsAtTopK
-from action_recognition.architectures.Loss import LossFunctions
 
 
 from imutils.video import FileVideoStream
@@ -82,6 +80,12 @@ def parse_args():
         "--test_output", help="Output directory for testing information, required if --test_mode=True",
         type = str
     )
+
+    parser.add_argument(
+        "--bayesian", help="Boolean. If true - actions will be predicted with uncertainty.",
+        action = 'store_true',
+        default = False
+    )
     return parser
 
 def hamming_loss(y_true, y_pred, tval = 0.4):
@@ -100,14 +104,19 @@ def process_batch(batch):
 
     return np.asarray(processed_batch)
 
-def predict_with_uncertainty(self, model, x, n_iter=10):
+def predict_with_uncertainty(model, x, n_iter=10):
     """
-    Returns model prediction using MC dropout technique.
+    Makes predictions using the MC dropout method. 
+
+    param model: Model with dropout layers.
+    param x: Input for prediction.
+
+    returns: predictions, uncertainty of prediction
     """
-    # Implement a function which applies dropout during test time.  
+
     f = K.function([model.layers[0].input, K.learning_phase()], [model.layers[-1].output])
     
-    result = np.zeros((n_iter, ) + (1, 32, 64, 13))
+    result = np.zeros((n_iter, ) + (1, 13))
 
     for iter in range(n_iter):
         result[iter] = f([x,1])
@@ -145,7 +154,7 @@ def calculateLocation(currentXs, currentYs):
         return None
     return [min(currentXs), min(currentYs), max(currentXs), max(currentYs)]
 
-def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode):
+def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian):
     global current_frame
     location = locations.pop(0)
     frame = processedFrames.pop(0)
@@ -203,19 +212,45 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
             # Process action tube
             batch = process_batch(track_tubeMap[trackId])
             batch = batch.reshape(1, FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, 3)
-            
-            # Generate predictions
-            preds = model.predict(batch)[0].tolist()
-            print(preds)
 
+            # Generate predictions
             # Clear the list
             track_tubeMap[trackId] = []
+
             # Update action label to match corresponding action
-            action_label = actions_header[preds.index(max(preds))]
+            mean_thresh = 3e-1
+            max_actions = 3
+            results = np.zeros((13, ))
+
+            if bayesian: 
+                preds, uncertainty = predict_with_uncertainty(model, batch)
+                print("Preds: ", preds)
+                print("Uncertainty: ", uncertainty)
+                # Threshold by the mean.
+                new_uncertainties = np.where(preds > mean_thresh, uncertainty, float("inf"))[0]
+                # Get at most three actions with the smallest uncertainty.
+                result_ind = np.argsort(new_uncertainties)[:max_actions]   
+                results[result_ind] = 1
+                results = np.where(new_uncertainties == float("inf"), 0., results)
+            else:
+                preds = model.predict(batch)[0]
+                print("Preds: ", preds)
+                # Threshold by the mean 
+                new_preds = np.where(preds > mean_thresh, preds, float("-inf"))
+                # Get at most 3 actions 
+                result_ind = np.argsort(new_preds)[-max_actions:]
+                results[result_ind] = 1
+                results = np.where(new_preds == float("-inf"), 0., results)
+
+            actions_header_arr = np.array(actions_header)
+            action_list = actions_header_arr[results.astype(bool)]
+            action_label = ','.join(action_list)
+
             print(f"Person {trackId} is {action_label}")
 
             if test_mode:
-                os.rename(recognition_directory,recognition_directory + "_" + action_label) 
+                action_dir_label = '_'.join(action_list)
+                os.rename(recognition_directory,recognition_directory + "_" + action_dir_label) 
 
             # Update map
             track_actionMap[trackId] = action_label
@@ -261,7 +296,7 @@ def writeFrame(frame, out, hide_window, test_mode):
         frame = cv2.resize(frame, (1200, 675))
         cv2.imshow('', frame)
 
-def main(yolo, hide_window, weights_file, test_mode, test_output):
+def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian):
     if test_mode:
         global object_detection_file
         global object_tracking_directory
@@ -278,20 +313,8 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
     nn_budget = None
     nms_max_overlap = 1.0
 
-    metrics = MetricsAtTopK(k=2)
-    losses = LossFunctions()
-
     model = TS_CNN_LSTM(INPUT_SHAPE, CLASSES)
     model.load_weights('action_recognition/architectures/weights/' + weights_file + '.hdf5')
-
-    metrics = MetricsAtTopK(k=2)
-    losses = LossFunctions()
-    model.compile(loss=losses.weighted_binary_crossentropy, 
-                    optimizer='adam', metrics=['accuracy', 
-                                                metrics.recall_at_k, 
-                                                metrics.precision_at_k, 
-                                                metrics.f1_at_k, 
-                                                losses.hamming_loss])
 
     # Track id frame batch
     track_tubeMap = {}
@@ -436,7 +459,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
             locations.append(location)
 
             if(frame_number >= skip):
-                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
 
 
 
@@ -452,7 +475,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
             unprocessedFrames.append(frame)
             locations.append([0,0,0,0])
             if(frame_number >= skip):
-                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
 
         # Display video as processed if necessary
 
@@ -477,7 +500,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output):
 
     while len(processedFrames) != 0:
         frame_number += 1
-        frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode)
+        frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
         writeFrame(frame, out, hide_window, test_mode)
 
 
@@ -501,4 +524,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if (args.test_mode) and (args.test_output is None):
         parser.error("--test_output required if --test_mode=True")
-    main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output)
+    main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian)
