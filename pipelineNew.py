@@ -53,7 +53,7 @@ POOL_SHAPE = (2, 2)
 INPUT_SHAPE = (FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, CHANNELS)
 
 # Action indices
-actions_header = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
+actions_header = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing-Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
 
 def parse_args():
     """ Parse command line arguments.
