@@ -21,7 +21,7 @@ ready = False
 
 def obtain_action(mode):
     if mode == 1:
-        actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing_Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing', '13':'Unknown'}
+        actions = {'1':'Handshaking','2':'Hugging','3':'Reading','4':'Drinking','5':'Pushing&Pulling','6':'Carrying','7':'Calling','8':'Running','9':'Walking','10':'Lying','11':'Sitting','12':'Standing', '13':'Unknown'}
     else:
         actions = {'1':'Bin', '2':'Needs_splitting'}
 
