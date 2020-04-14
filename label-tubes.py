@@ -14,6 +14,12 @@ def parse_args():
     parser.add_argument(
         "--mode", help="1 = normal, 2 = sort unknowns",
         default = 1)
+    parser.add_argument(
+        "--start", help="start of range",
+        default=0)
+    parser.add_argument(
+        "--end", help="start of range",
+        default=10000)
     return parser.parse_args()
 
 ready = False
@@ -45,15 +51,21 @@ def obtain_action(mode):
                 break
     return result[1:]
 
-def main(location, mode):
+def main(location, mode, start, end):
     location = 'results/action_recognition/{}'.format(location)
 
-    ground_truths = open('{}/ground_truths.txt'.format(location), 'w')
+    ground_truths = open('{}_output.txt'.format(location), 'w')
 
-    for directory in os.listdir(location):
+    for directory in sorted(os.listdir(location), key=lambda x: int("".join(x.split("_", 2)[:2]))):
         currentTube = os.path.join(location, directory)
         print("Actiontube: " + currentTube)
 
+
+        id = "_".join(directory.split("_", 2)[:1])
+
+        if not (start <= id and id <= end):
+            continue
+    
         track_id = "_".join(directory.split("_", 2)[:2])
 
         print("track id = {}".format(track_id))
@@ -82,4 +94,4 @@ def main(location, mode):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(args.location, args.mode)
+    main(args.location, args.mode, args.start, args.end)
