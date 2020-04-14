@@ -404,10 +404,6 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
 
             boxs = yolo.detect_image(image)
 
-            if test_mode:
-                if len(boxs) != 0:
-                    for i in range(0,len(boxs)):
-                        object_detection_file.write(str(frame_number)+' ' + str(boxs[i][0]) + ' '+str(boxs[i][1]) + ' '+str(boxs[i][2]) + ' '+str(boxs[i][3]) + '\n')
 
             features = encoder(frame,boxs)
             
@@ -420,6 +416,11 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
             indices = preprocessing.non_max_suppression(boxes, nms_max_overlap, scores)
             detections = [detections[i] for i in indices]
 
+            if test_mode:
+                if len(detections) != 0:
+                    for i in range(0,len(detections)):
+                        bbox = detections[i].to_tlbr()
+                        object_detection_file.write(str(frame_number)+' ' + str(int(bbox[0])) + ' '+str(int(bbox[1])) + ' '+str(int(bbox[2])) + ' '+str(int(bbox[3])) + '\n')
             # Call the tracker
             tracker.predict()
             tracker.update(detections)
