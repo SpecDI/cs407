@@ -355,6 +355,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
     video_capture = FileVideoStream(input_file).start()
 
+    # Let input stream load some frames
+    time.sleep(5)
+
     # Define the codec and create VideoWriter object
     w = 3840
     h = 2160
