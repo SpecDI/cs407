@@ -88,6 +88,11 @@ def parse_args():
     )
     
     parser.add_argument(
+        "--batch_factor", help="Boolean. If true - batch size = 32, false = 64",
+        default = 1
+    )
+
+    parser.add_argument(
         "--sourceDir_path", help="Path to the directory containing the input videos. Defaults to web_server",
         required = True
     )
@@ -159,7 +164,11 @@ def calculateLocation(currentXs, currentYs):
         return None
     return [min(currentXs), min(currentYs), max(currentXs), max(currentYs)]
 
-def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian):
+
+def repeatBatch(batch, i): 
+    return np.repeat(batch,i)
+
+def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian, batch_factor):
     global current_frame
     location = locations.pop(0)
     frame = processedFrames.pop(0)
@@ -174,7 +183,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
         append_str = str(trackId)
 
         if trackId not in track_actionMap:
-            track_actionMap[trackId] = 'Unknown'
+            track_actionMap[trackId] = ''
 
         # Init new key if necessary
         if trackId not in track_tubeMap:
@@ -200,7 +209,9 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
             cv2.imwrite(track_directory + "/" + str(current_frame) + ".jpg", block) 
 
         # Check size of track bucket
-        if len(track_tubeMap[trackId]) == FRAME_NUM:
+
+
+        if len(track_tubeMap[trackId]) == int(FRAME_NUM/batch_factor):
             if test_mode:
                 global batch_number
                 if trackId in batch_number:
@@ -216,6 +227,10 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                     cv2.imwrite(recognition_directory + "/" + str(i) + ".jpg", block) 
             # Process action tube
             batch = process_batch(track_tubeMap[trackId])
+            
+            batch = repeatBatch(batch, batch_factor)
+
+
             batch = batch.reshape(1, FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, 3)
 
             # Generate predictions
@@ -301,7 +316,7 @@ def writeFrame(frame, out, hide_window, test_mode):
         frame = cv2.resize(frame, (1200, 675))
         cv2.imshow('', frame)
 
-def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, input_file):
+def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batch_factor, input_file):
     if test_mode:
         global object_detection_file
         global object_tracking_directory
@@ -339,6 +354,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
     tracker = Tracker(metric)
 
     video_capture = FileVideoStream(input_file).start()
+
+    # Let input stream load some frames
+    time.sleep(5)
 
     # Define the codec and create VideoWriter object
     w = 3840
@@ -404,10 +422,6 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
 
             boxs = yolo.detect_image(image)
 
-            if test_mode:
-                if len(boxs) != 0:
-                    for i in range(0,len(boxs)):
-                        object_detection_file.write(str(frame_number)+' ' + str(boxs[i][0]) + ' '+str(boxs[i][1]) + ' '+str(boxs[i][2]) + ' '+str(boxs[i][3]) + '\n')
 
             features = encoder(frame,boxs)
             
@@ -420,6 +434,11 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
             indices = preprocessing.non_max_suppression(boxes, nms_max_overlap, scores)
             detections = [detections[i] for i in indices]
 
+            if test_mode:
+                if len(detections) != 0:
+                    for i in range(0,len(detections)):
+                        bbox = detections[i].to_tlbr()
+                        object_detection_file.write(str(frame_number)+' ' + str(int(bbox[0])) + ' '+str(int(bbox[1])) + ' '+str(int(bbox[2])) + ' '+str(int(bbox[3])) + '\n')
             # Call the tracker
             tracker.predict()
             tracker.update(detections)
@@ -465,7 +484,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
             locations.append(location)
 
             if(frame_number >= skip):
-                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian, batch_factor)
 
 
 
@@ -481,7 +500,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
             unprocessedFrames.append(frame)
             locations.append([0,0,0,0])
             if(frame_number >= skip):
-                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
+                frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian, batch_factor)
 
         # Display video as processed if necessary
 
@@ -506,7 +525,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, inpu
 
     while len(processedFrames) != 0:
         frame_number += 1
-        frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian)
+        frame = processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian, batch_factor)
         writeFrame(frame, out, hide_window, test_mode)
 
 
@@ -531,6 +550,8 @@ if __name__ == '__main__':
     if (args.test_mode) and (args.test_output is None):
         parser.error("--test_output required if --test_mode=True")
     
+    if FRAME_NUM % int(args.batch_factor) != 0:
+        parser.error("--batch_factor must be factor of {}".format(FRAME_NUM))
     # Get file paths
     file_paths = glob.glob(args.sourceDir_path + "*.mp4")
     print('\nDiscovered files:')
@@ -539,4 +560,4 @@ if __name__ == '__main__':
         
     for video_path in file_paths:
         print(f'Processing: {video_path}\n')
-        main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian, video_path)
+        main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian, int(args.batch_factor), video_path)
