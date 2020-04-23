@@ -6,6 +6,19 @@ import numpy as np
 
 class TemporalMaxPooling2D(Layer):
     
+    """
+    Acknowledgements
+    
+    The implemented temporal pooling algorithm is based
+    on the community supplied implementation available at
+    
+    https://gist.github.com/nigeljyng/881ae30e7c35ca2b77f6975e50736493
+    
+    This was also created as a response to the work of Tan et al.,
+    on LSTM-based deep learning models for nonfactoid answer selection
+    https://arxiv.org/pdf/1511.04108.pdf
+    """
+    
     def __init__(self, **kwargs):
         super(TemporalMaxPooling2D, self).__init__(**kwargs)
         self.supports_masking = True
