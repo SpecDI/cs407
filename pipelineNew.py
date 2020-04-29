@@ -251,7 +251,8 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                 # Threshold by the mean.
                 new_uncertainties = np.where(preds > mean_thresh, uncertainty, float("inf"))[0]
                 # Get at most three actions with the smallest uncertainty.
-                result_ind = np.argsort(new_uncertainties)[:max_actions]   
+                result_ind = np.argsort(new_uncertainties)[:max_actions]
+                   
                 results[result_ind] = 1
                 results = np.where(new_uncertainties == float("inf"), 0., results)
             else:
@@ -268,8 +269,11 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
             action_list = actions_header_arr[results.astype(bool)]
             action_label = ','.join(action_list)
 
+
+
+            results2 = [preds[0][x] if results[x] == 1 else results[x] for x, _ in enumerate(results)]
             track_identifier = str(trackId) + "_" + str(batch_number[trackId])
-            resultString = "[" + ', '.join(map(str, results)) + "]"
+            resultString = "[" + ', '.join(map(str, results2)) + "]"
             action_recognition_file.write(track_identifier + " = "+resultString +"\n")
 
             if not action_label:
