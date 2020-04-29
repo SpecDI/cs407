@@ -90,7 +90,6 @@ def transform_image(im_file, target_names):
     for actionTube_key in target_names:
         # Augment image given action tube's transform
         im = datagen.apply_transform(im, target_names[actionTube_key])
-        im /= 255.0
         im = random_noise(im, mode = 'gaussian', var = 0.001, clip = True)
 
         # Generate image name and save it
