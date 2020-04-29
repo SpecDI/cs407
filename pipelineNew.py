@@ -36,7 +36,7 @@ from imutils.video import FileVideoStream
 
 object_detection_file = None
 object_tracking_directory = None
-action_recognition_directory = None
+action_recognition_file = None
 batch_number = dict()
 current_frame = 0
 
@@ -220,12 +220,12 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                 else:
                     batch_number[trackId] = 0
 
-                recognition_directory = action_recognition_directory + "/" + str(trackId) + "_" + str(batch_number[trackId])
+                # recognition_directory = action_recognition_directory + "/" + str(trackId) + "_" + str(batch_number[trackId])
 
-                if not os.path.exists(recognition_directory):
-                    os.mkdir(recognition_directory)
-                for i, block in enumerate(track_tubeMap[trackId], current_frame - FRAME_NUM + 1):
-                    cv2.imwrite(recognition_directory + "/" + str(i) + ".jpg", block) 
+                # if not os.path.exists(recognition_directory):
+                #     os.mkdir(recognition_directory)
+                # for i, block in enumerate(track_tubeMap[trackId], current_frame - FRAME_NUM + 1):
+                #     cv2.imwrite(recognition_directory + "/" + str(i) + ".jpg", block) 
             # Process action tube
             batch = process_batch(track_tubeMap[trackId])
             
@@ -268,16 +268,20 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
             action_list = actions_header_arr[results.astype(bool)]
             action_label = ','.join(action_list)
 
+            track_identifier = str(trackId) + "_" + str(batch_number[trackId])
+            resultString = "[" + ', '.join(map(str, results)) + "]"
+            action_recognition_file.write(track_identifier + " = "+resultString +"\n")
+
             if not action_label:
                 action_label = "Unknown"
 
             print(f"Person {trackId} is {action_label}")
 
-            if test_mode:
-                action_dir_label = '_'.join(action_list)
-                if not action_dir_label:
-                    action_dir_label = "Unknown"
-                os.rename(recognition_directory,recognition_directory + "_" + action_dir_label) 
+            # if test_mode:
+            #     action_dir_label = '_'.join(action_list)
+            #     if not action_dir_label:
+            #         action_dir_label = "Unknown"
+            #     os.rename(recognition_directory,recognition_directory + "_" + action_dir_label) 
 
             # Update map
             track_actionMap[trackId] = action_label
@@ -297,7 +301,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
 def initialiseTestMode(video_name):
     global object_detection_file
     global object_tracking_directory
-    global action_recognition_directory
+    global action_recognition_file
 
     if not os.path.exists('results/object_detection/' + str(video_name)):
         os.mkdir('results/object_detection/' + str(video_name))
@@ -309,7 +313,8 @@ def initialiseTestMode(video_name):
 
     if not os.path.exists('results/action_recognition/' + str(video_name)):
         os.mkdir('results/action_recognition/' + str(video_name))
-    action_recognition_directory = 'results/action_recognition/' + str(video_name)
+    #action_recognition_directory = 'results/action_recognition/' + str(video_name)
+    action_recognition_file = open('results/action_recognition/' + str(video_name) + '/action_recogition.txt', 'w')
 
 def validBbox(bbox):
     if abs(bbox[0] - bbox[2])<=1 or abs(bbox[1] - bbox[3]) <=1:
