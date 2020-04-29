@@ -165,8 +165,10 @@ def calculateLocation(currentXs, currentYs):
     return [min(currentXs), min(currentYs), max(currentXs), max(currentYs)]
 
 
-def repeatBatch(batch, i): 
-    return np.repeat(batch,i)
+def repeatBatch(batch, i):
+    a = np.array(batch)
+
+    return np.tile(a, i)
 
 def processFrame(locations, processedFrames, processedTracks, track_tubeMap, track_actionMap, model, test_mode, bayesian, batch_factor):
     global current_frame
@@ -197,7 +199,6 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                 block = track_tubeMap[trackId][-1]
             else:
                 continue
-        print(block.shape)
 
         track_tubeMap[trackId].append(block)
 
@@ -246,6 +247,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                 preds, uncertainty = predict_with_uncertainty(model, batch)
                 print("Preds: ", preds)
                 print("Uncertainty: ", uncertainty)
+
                 # Threshold by the mean.
                 new_uncertainties = np.where(preds > mean_thresh, uncertainty, float("inf"))[0]
                 # Get at most three actions with the smallest uncertainty.
@@ -266,10 +268,15 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
             action_list = actions_header_arr[results.astype(bool)]
             action_label = ','.join(action_list)
 
+            if not action_label:
+                action_label = "Unknown"
+
             print(f"Person {trackId} is {action_label}")
 
             if test_mode:
                 action_dir_label = '_'.join(action_list)
+                if not action_dir_label:
+                    action_dir_label = "Unknown"
                 os.rename(recognition_directory,recognition_directory + "_" + action_dir_label) 
 
             # Update map
@@ -389,7 +396,6 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
             break
-        print(frame_number)
         t1 = time.time()
 
         x = w

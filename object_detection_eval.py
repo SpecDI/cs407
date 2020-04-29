@@ -81,7 +81,7 @@ def computeIou(truth_bbox, pred_bbox):
     iou = interArea / float(boxAArea + boxBArea - interArea)
     # return the intersection over union value
 
-    if iou > 0.4:
+    if iou > 0.1:
         return 1
     return iou
 

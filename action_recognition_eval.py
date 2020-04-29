@@ -8,15 +8,15 @@ K = tf.keras.backend
 import os 
 import numpy as np
 from collections import OrderedDict
-from action_recognition.architectures.Metrics_v2 import MetricsAtTopK, RankMetrics
+from action_recognition.architectures.Metrics import MetricsAtTopK, RankMetrics
 from action_recognition.architectures.Loss import LossFunctions
 
-video = "example"
-pred_path = "results/action_recognition/" + video
-ground_truth = "ground_truth/" + video + ".txt"
+video = ""
+pred_path = "results/action_recognition/bayesian"
+ground_truth = "results/action_recognition/bayesian_output.txt"
 delim = ','
 
-classes = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing_Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
+classes = sorted(['Unknown', 'Sitting', 'Lying', 'Drinking', 'Calling', 'Reading', 'Handshaking', 'Running', 'Pushing&Pulling', 'Walking', 'Hugging', 'Carrying', 'Standing'])
 classes_dict = OrderedDict(zip(classes, range(len(classes))))
 
 def multi_hot_encoding(class_names):
@@ -29,7 +29,7 @@ with open(ground_truth) as f:
   d = dict(x.rstrip().split(delim) for x in f)
 
 for k, v in d.items():
-    d[k] = v.split('_')
+    d[k] = v.strip().split('_')
 
 Y_true = []
 Y_pred = []

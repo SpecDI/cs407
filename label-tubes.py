@@ -19,7 +19,7 @@ def parse_args():
         default=0)
     parser.add_argument(
         "--end", help="start of range",
-        default=10000)
+        default=1000000)
     return parser.parse_args()
 
 ready = False
@@ -61,10 +61,10 @@ def main(location, mode, start, end):
         print("Actiontube: " + currentTube)
 
 
-        id = "_".join(directory.split("_", 2)[:1])
+        # id = "_".join(directory.split("_", 2)[:1])
 
-        if not (start <= id and id <= end):
-            continue
+        # if not (start <= id and id <= end):
+        #     continue
     
         track_id = "_".join(directory.split("_", 2)[:2])
 
@@ -94,4 +94,4 @@ def main(location, mode, start, end):
 if __name__ == '__main__':
     # Parse user provided arguments
     args = parse_args()
-    main(args.location, args.mode, args.start, args.end)
+    main(args.location, args.mode, int(args.start), int(args.end))
