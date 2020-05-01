@@ -255,6 +255,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                    
                 results[result_ind] = 1
                 results = np.where(new_uncertainties == float("inf"), 0., results)
+                results2 = [preds[0][x] if results[x] == 1 else results[x] for x, _ in enumerate(results)]
             else:
                 preds = model.predict(batch)[0]
                 print("Preds: ", preds)
@@ -264,6 +265,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
                 result_ind = np.argsort(new_preds)[-max_actions:]
                 results[result_ind] = 1
                 results = np.where(new_preds == float("-inf"), 0., results)
+                results2 = [preds[x] if results[x] == 1 else results[x] for x, _ in enumerate(results)]
 
             actions_header_arr = np.array(actions_header)
             action_list = actions_header_arr[results.astype(bool)]
@@ -271,7 +273,7 @@ def processFrame(locations, processedFrames, processedTracks, track_tubeMap, tra
 
 
 
-            results2 = [preds[0][x] if results[x] == 1 else results[x] for x, _ in enumerate(results)]
+            
             track_identifier = str(trackId) + "_" + str(batch_number[trackId])
             resultString = "[" + ', '.join(map(str, results2)) + "]"
             action_recognition_file.write(track_identifier + " = "+resultString +"\n")
