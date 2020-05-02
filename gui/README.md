@@ -14,7 +14,7 @@
  - Run: python manage.py runserver
  - In a separate Terminal window, navigate to the root level of the repo (i.e. same level as pipeline) and run: celery -A pipelineNewAsync worker --loglevel=info
  - In your browser, go to http://127.0.0.1:8000/drone/
- - Upload the desired video and enjoy
+ - Upload the desired (mp4) video and enjoy
 
  ## Note on Redis
 

@@ -348,7 +348,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     file_name = os.path.splitext(os.path.basename(input_file))[0]
     #output_file = f'./web_server/output_{file_name}.avi'
     #output_file = f'./gui/webapp/static/output_{file_name}.avi' # Existing pipeline version. Commented for easier Django display.
-    output_file = f'./gui/webapp/static/output.avi'
+    output_file = f'./gui/webapp/static/output.mp4'###
 
     # Definition of the parameters
     max_cosine_distance = 0.3
@@ -390,7 +390,8 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     # Define the codec and create VideoWriter object
     w = 3840
     h = 2160
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
+    #fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
+    fourcc = cv2.VideoWriter_fourcc(*'H264') #####
     # Build video output handler only if we are not cropping
 
     out = None
@@ -416,7 +417,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     locations = []
 
     skip = 1
-    while video_capture.more():
+    while video_capture.more() and frame_number < 300: ####
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
             break
@@ -545,7 +546,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
         # Updates progress bar every 5 frames
         if frame_number % 5 == 0:
             #progress_recorder.set_progress(frame_number, frame_total)
-            progress_recorder.set_progress(frame_number, frame_total)
+            progress_recorder.set_progress(frame_number, 300) ####
 
         if frame_number % 5 != 0:
             location = calculateLocation(currentXs, currentYs)
