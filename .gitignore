@@ -15,6 +15,7 @@ action-tubes/test/
 action-tubes/training/
 output/
 detection.txt
+results/
 
 # Log files
 /**/logs/**/*

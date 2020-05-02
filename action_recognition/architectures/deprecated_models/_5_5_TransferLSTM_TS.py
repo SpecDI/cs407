@@ -6,18 +6,20 @@ from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Lambda, LSTM, Average, Bidirectional
 from keras.layers import Conv2D, MaxPooling2D, TimeDistributed, BatchNormalization, Input
 from keras import backend as K
+# from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from keras.applications.vgg16 import VGG16, preprocess_input
+# from keras.applications.resnet import ResNet50, preprocess_input
+
 from temporal_pooling import TemporalMaxPooling2D
-from keras.regularizers import l2
 
 # Data paths
-TRAIN_DIR = '../../action-tubes/training/all/completed/'
-TEST_DIR = '../../action-tubes/test/'
+TRAIN_DIR = '../data/action_tubes/Training/'
+TEST_DIR = '../data/action_tubes/Test/'
 
 # Constants
-WEIGHT_FILE_NAME = "_5_5_TransferLSTM_TS"
+WEIGHT_FILE_NAME = "_5_0_CNN_LSTM"
 BATCH_SIZE = 8
-EPOCHS = 100
+EPOCHS = 50
 
 FRAME_LENGTH = 80
 FRAME_WIDTH = 80
@@ -28,10 +30,6 @@ CLASSES = 13
 KERNEL_SHAPE = (3, 3)
 POOL_SHAPE = (2, 2)
 INPUT_SHAPE = (FRAME_NUM, FRAME_LENGTH, FRAME_WIDTH, CHANNELS)
-
-dropout = 0.1
-reg = 1e-4
-
 
 def spatial_stream(input_shape):
     """
@@ -46,8 +44,7 @@ def spatial_stream(input_shape):
         layer.trainable = False 
     
     x = Flatten()(base.output)
-    x = Dropout(dropout)(x)
-    x = Dense(512, activation = 'relu', kernel_regularizer=l2(reg))(x)
+    x = Dense(512, activation = 'relu')(x)
     
     cnn = Model(inputs=base.input, outputs=x)
     cnn.summary()
@@ -57,6 +54,8 @@ def spatial_stream(input_shape):
 
     model = Model(inputs=[input_], outputs=x)
     model.summary()
+    
+    
 
     return model
     
@@ -65,19 +64,18 @@ def TS_CNN_LSTM(input_shape, classes):
     sStream = spatial_stream(input_shape)
     
     # Create LSTM temporal stream
-    x = Dropout(dropout)(sStream.output)
-    x = Bidirectional(LSTM(256, recurrent_dropout=dropout, return_sequences=True))(x)
+    x = Dropout(0.1)(sStream.output)
+    x = Bidirectional(LSTM(256, recurrent_dropout=0.1, return_sequences=True))(x)
     x = TemporalMaxPooling2D()(x)
-    x = Dropout(dropout)(x)
+    x = Dropout(0.1)(x)
     tStream = Model(inputs=sStream.input, outputs=x)
     
     # Create full 2 stream network
     spatial_average = Lambda(function=lambda x: K.mean(x, axis=1),
                    output_shape=lambda shape: (shape[0],) + shape[2:])(sStream.output)
-    spatial_average = Dropout(dropout)(spatial_average)           
-    spatial_out = Dense(classes, activation = 'sigmoid', kernel_regularizer=l2(reg))(spatial_average)
+    spatial_out = Dense(classes, activation = 'sigmoid')(spatial_average)
     
-    temporal_out = Dense(classes, activation = 'sigmoid', kernel_regularizer=l2(reg))(tStream.output)
+    temporal_out = Dense(classes, activation = 'sigmoid')(tStream.output)
     
     averaged = Average()([spatial_out, temporal_out])
     
@@ -89,15 +87,10 @@ def TS_CNN_LSTM(input_shape, classes):
     
 
 if __name__ == "__main__":
-    """
+
     from training import TrainingSuite
 
     training_suite = TrainingSuite(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM, preprocess_input)
     model = TS_CNN_LSTM(INPUT_SHAPE, CLASSES)
 
-    training_suite.evaluation(model, WEIGHT_FILE_NAME)
-    """
-    from predictions_v2 import Prediction
-    model = TS_CNN_LSTM(INPUT_SHAPE, CLASSES)
-    preds = Prediction(BATCH_SIZE, EPOCHS, TRAIN_DIR, TEST_DIR, FRAME_LENGTH, FRAME_WIDTH, FRAME_NUM, preprocess_input)
-    preds.probablistic_predictions(model, WEIGHT_FILE_NAME)
+    training_suite.evaluation(model, WEIGHT_FILE_NAME, gen_logs = False)
