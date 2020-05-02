@@ -391,7 +391,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     w = 3840
     h = 2160
     #fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
-    fourcc = cv2.VideoWriter_fourcc(*'H264') #####
+    fourcc = cv2.VideoWriter_fourcc(*'H264') # Now mp4!
     # Build video output handler only if we are not cropping
 
     out = None
@@ -417,7 +417,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     locations = []
 
     skip = 1
-    while video_capture.more() and frame_number < 300: ####
+    while video_capture.more(): ####
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
             break
@@ -543,10 +543,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
         frame_number += 1
 
-        # Updates progress bar every 5 frames
-        if frame_number % 5 == 0:
-            #progress_recorder.set_progress(frame_number, frame_total)
-            progress_recorder.set_progress(frame_number, 300) ####
+        # Updates progress bar every 10 frames
+        if frame_number % 10 == 0:
+            progress_recorder.set_progress(frame_number, frame_total) ####
 
         if frame_number % 5 != 0:
             location = calculateLocation(currentXs, currentYs)
