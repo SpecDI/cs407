@@ -560,6 +560,7 @@ if __name__ == '__main__':
         parser.error("--batch_factor must be factor of {}".format(FRAME_NUM))
     # Get file paths
     file_paths = glob.glob(args.sourceDir_path + "*.mp4")
+    print(args.sourceDir_path)
     print('\nDiscovered files:')
     for file in file_paths:
         print(file)
