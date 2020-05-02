@@ -1,8 +1,7 @@
-from celery import shared_task
+from celery import shared_task, task
 from celery_progress.backend import ProgressRecorder
 import time
 from django.core.files.storage import FileSystemStorage
-
 
 from time import sleep
 
@@ -16,7 +15,8 @@ def sleepy(duration):
     sleep(duration)
     return None
 
-@shared_task(bind=True)
+#@shared_task(bind=True)
+@task(bind=True, name="tasks.dummy_modify_video")
 def dummy_modify_video(self, vid_name):
 
     progress_recorder = ProgressRecorder(self)

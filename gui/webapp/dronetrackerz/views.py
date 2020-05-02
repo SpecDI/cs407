@@ -8,24 +8,13 @@ from time import sleep
 import os.path
 from os import path
 
-# Create your views here.
+from celery.execute import send_task
 
-# def index(request):
-#     sleepy.delay(10)
-#     return HttpResponse('<h1>TASK IS DONE!</h1>')
-
-
-
-# Just render the basic upload landing page.
-# def uploadView(request):
-#     if request.method == 'POST':
-#         uploaded_file = request.FILES['document']
-#         print(uploaded_file.name)
-#         print(uploaded_file.size)
-#     return render(request, 'drone_upload.html')
+import re
 
 
 # Kick off Celery, display progress bar
+#NOT USED
 def progressView(request):
     context = {}
 
@@ -51,9 +40,23 @@ def droneView(request):
         from static.test import modify_video
         uploaded_file = request.FILES['document']
 
+        print("=============================================")
         fs = FileSystemStorage()
+        items = fs.listdir("")
+        print("Items: ", items)
+        poss_mp4s = items[1]
+        r = re.compile(".*mp4")
+        true_mp4s = list(filter(r.match, poss_mp4s))
+        print("True MP4s: " , true_mp4s)
+        for vid in true_mp4s:
+            print("Deleting:" , vid)
+            fs.delete(vid)
+        print("=============================================")
+
+
+
+
         # Delete previously uploaded input file (if it exists)
-        fs.delete('1.1.1.mov')
         video_name = fs.save(uploaded_file.name, uploaded_file)
         print("Video name: " + video_name)
         #context['url'] = fs.url(video_name) #NEED TO REMOVE LATER
@@ -64,8 +67,10 @@ def droneView(request):
         print("Chopped VideoURL: ", video_url)
 
         print("Video_url data type: " , type(video_url))
-        result = dummy_modify_video.delay(video_url)
-
+        #result = dummy_modify_video.delay(video_url)
+        #result = send_task("tasks.dummy_modify_video" , kwargs=dict(value="video_url") ) 
+        #result = send_task("tasks.dummy_modify_video" , args=[video_url] ) 
+        result = send_task("pipeline_async", args=[video_url])
 
         return render(request, 'drone_progress.html', context={'task_id': result.task_id})
 
