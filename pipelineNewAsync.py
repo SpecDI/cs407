@@ -374,6 +374,14 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
     tracker = Tracker(metric)
 
+    ################################################################################
+    # New: Count total number of frames!
+    video_count = cv2.VideoCapture(input_file)
+    frame_total = int(video_count.get(cv2.CAP_PROP_FRAME_COUNT))
+    print("FRAME COUNT: " , frame_total)
+    video_count.release()
+    ################################################################################
+
     video_capture = FileVideoStream(input_file).start()
 
     # Let input stream load some frames
@@ -395,13 +403,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
     frame_number = 0
 
-    ################################################################################
-    # New: Count total number of frames!
-    video_count = cv2.VideoCapture(input_file)
-    frame_total = int(video_count.get(cv2.CAP_PROP_FRAME_COUNT))
-    print("FRAME COUNT: " , frame_total)
-    video_count.release()
-    ################################################################################
+
 
     track_buffer = []
 
@@ -542,6 +544,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
         # Updates progress bar every 5 frames
         if frame_number % 5 == 0:
+            #progress_recorder.set_progress(frame_number, frame_total)
             progress_recorder.set_progress(frame_number, frame_total)
 
         if frame_number % 5 != 0:
