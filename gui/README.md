@@ -6,7 +6,7 @@
  - Celery (V4.4.2)
  - CeleryProgress (V0.0.9)
  - Redis (3.4.1)
- - Eventlet (Windows)
+ - Eventlet (Windows - V0.25.2)
 
 ## How to run
 
