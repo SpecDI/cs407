@@ -1,0 +1,110 @@
+
+{% load static %}
+<html>
+    <head>
+        <link rel="stylesheet" href="{% static 'style.css' %}" />
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/afterglowplayer@1.x"></script>
+
+
+        <!-- Font Awesome JS -->
+            <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+            <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+
+            <script src="{% static 'js/jquery-3.4.1.min.js' %}"></script>
+            <script src="{% static 'js/main.js' %}"></script>
+            <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+
+
+            <link href="https://fonts.googleapis.com/css?family=Share+Tech&display=swap" rel="stylesheet">
+        <title> CS407 DroneTrackerz Web App - Upload!</title>
+    </head>
+
+
+    <body >
+
+      <div class="container">
+
+          <!-- Top Text -->
+          <span class="text-center d-block" id="page_title">CS407: DroneTrackerz</span>
+          <span class="text-center d-block" id="title_caption">A Tool to Identify People and Their Actions in Drone Footage</span>
+    
+          
+          <!-- Start of symbols section -->
+          <div class="symbols text-center">
+
+            <!-- Start of icons -->
+            <div class="row align-items-start">
+              
+              <div class="col-2 upload" id="upload_icon">
+                <i class="fas fa-upload component"></i>
+              </div>
+
+              <div class="col-1 upload">
+                <i class="fas fa-arrow-right component" ></i>
+              </div>
+
+              <div class="col-2 users" id="user_icon">
+                <i class="fas fa-users component"></i>
+              </div>
+
+              <div class="col-1 users">
+                <i class="fas fa-arrow-right component"></i>
+              </div>
+
+              <div class="col-2 tracking" id="track_icon">
+                <i class="fas fa-th component"></i>
+              </div>
+
+              <div class="col-1 tracking">
+                <i class="fas fa-arrow-right component"></i>
+              </div>
+
+              <div class="col-2 action" id="action_icon">
+                <i class="fas fa-walking component"></i>
+              </div>
+            </div>
+
+            <!-- End of icons -->
+
+            <!-- Start of text -->
+            <div class="row align-items-center">
+                <div class="col-2 upload icon-text">
+                    <span>Upload Video</span>
+                </div>
+                <div class="col-2 offset-1 users icon-text" >
+                    <span>People Identification</span>
+                </div>
+                <div class="col-2 offset-1 tracking icon-text">
+                    <span>People Tracking</span>
+                </div>
+                <div class="col-2 offset-1 action icon-text">
+                    <span>Action Recognition</span>
+                </div>
+                <div class="col align-items-center icon-explain">
+                    <span>Text to explain each component</span>
+              </div>
+            </div>
+            <!-- End of text -->
+
+          <!-- End of symbols section -->
+          </div> 
+
+        <!-- Upload Button - -->
+        <div class="videowrapper">
+          <form method="post" enctype="multipart/form-data" id="form-upload">
+              <!-- <div class="form-div"> -->
+                {%csrf_token%}
+                <input type="file" name="document" id="file" class="file-upload" >
+                <label for="file" id="file-label"> <i class="fas fa-upload"></i></label>
+              <!-- </div> End of form-div -->
+            </form>
+         </div> <!-- End of videowrapper -->
+
+        </div>
+
+    </body>
+
+</html>

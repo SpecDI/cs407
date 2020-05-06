@@ -34,6 +34,18 @@ from action_recognition.architectures._5_5_TransferLSTM_TS import TS_CNN_LSTM
 
 from imutils.video import FileVideoStream
 
+from celery_progress.backend import ProgressRecorder
+
+
+
+# Celery Setup
+from celery import Celery
+from celery.task import task
+
+app = Celery('pipelineNewAsync')
+app.config_from_object('celeryconfig')
+
+
 object_detection_file = None
 object_tracking_directory = None
 action_recognition_directory = None
@@ -323,7 +335,7 @@ def writeFrame(frame, out, hide_window, test_mode):
         frame = cv2.resize(frame, (1200, 675))
         cv2.imshow('', frame)
 
-def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batch_factor, input_file):
+def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batch_factor, input_file, progress_recorder):
     if test_mode:
         global object_detection_file
         global object_tracking_directory
@@ -334,7 +346,9 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
     # Define output path based on file name and web_server dir
     file_name = os.path.splitext(os.path.basename(input_file))[0]
-    output_file = f'./web_server/output_{file_name}.avi'
+    #output_file = f'./web_server/output_{file_name}.avi'
+    #output_file = f'./gui/webapp/static/output_{file_name}.avi' # Existing pipeline version. Commented for easier Django display.
+    output_file = f'./gui/webapp/static/output.mp4'###
 
     # Definition of the parameters
     max_cosine_distance = 0.3
@@ -360,6 +374,14 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
     tracker = Tracker(metric)
 
+    ################################################################################
+    # New: Count total number of frames!
+    video_count = cv2.VideoCapture(input_file)
+    frame_total = int(video_count.get(cv2.CAP_PROP_FRAME_COUNT))
+    print("FRAME COUNT: " , frame_total)
+    video_count.release()
+    ################################################################################
+
     video_capture = FileVideoStream(input_file).start()
 
     # Let input stream load some frames
@@ -368,7 +390,8 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     # Define the codec and create VideoWriter object
     w = 3840
     h = 2160
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
+    #fourcc = cv2.VideoWriter_fourcc(*'MJPG') #*'XVID'
+    fourcc = cv2.VideoWriter_fourcc(*'H264') # Now mp4!
     # Build video output handler only if we are not cropping
 
     out = None
@@ -381,6 +404,8 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
     frame_number = 0
 
+
+
     track_buffer = []
 
     unprocessedFrames = []
@@ -392,7 +417,7 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     locations = []
 
     skip = 1
-    while video_capture.more():
+    while video_capture.more(): ####
         frame = video_capture.read()  # frame shape 640*480*3
         if not isinstance(frame, np.ndarray):
             break
@@ -517,6 +542,11 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
 
 
         frame_number += 1
+
+        # Updates progress bar every 10 frames
+        if frame_number % 10 == 0:
+            progress_recorder.set_progress(frame_number, frame_total) ####
+
         if frame_number % 5 != 0:
             location = calculateLocation(currentXs, currentYs)
 
@@ -549,22 +579,44 @@ def main(yolo, hide_window, weights_file, test_mode, test_output, bayesian, batc
     if test_mode:
         object_detection_file.close()
 
-if __name__ == '__main__':
-    # Parse user provided arguments
-    parser = parse_args()
-    args = parser.parse_args()
-    if (args.test_mode) and (args.test_output is None):
-        parser.error("--test_output required if --test_mode=True")
+#if __name__ == '__main__':
+
+@task(bind=True, name="pipeline_async")
+def pipeline_async(self, vid_name):
+
+    # Hard-coded arguments for web app
+    HIDE_WINDOW = True
+    WEIGHTS_FILE = "_5_5_TransferLSTM_TS"
+    TEST_MODE = False
+    TEST_OUTPUT = ""
+    BAYESIAN = False
+    BATCH_FACTOR = 1
+    SOURCEDIR_PATH = "gui/webapp/"
+
+    # Initialise progress recorder for async progress bar
+    progress_recorder = ProgressRecorder(self)
+    print("Progress recorder object :" , progress_recorder)
+
     
-    if FRAME_NUM % int(args.batch_factor) != 0:
-        parser.error("--batch_factor must be factor of {}".format(FRAME_NUM))
+    # Parse user provided arguments
+    #parser = parse_args()
+    #args = parser.parse_args()
+    #if (args.test_mode) and (args.test_output is None):
+    #    parser.error("--test_output required if --test_mode=True")
+    
+    #if FRAME_NUM % int(args.batch_factor) != 0:
+    #    parser.error("--batch_factor must be factor of {}".format(FRAME_NUM))
     # Get file paths
-    file_paths = glob.glob(args.sourceDir_path + "*.mp4")
-    print(args.sourceDir_path)
-    print('\nDiscovered files:')
-    for file in file_paths:
-        print(file)
+
+    print(f'Processing: {vid_name}\n')
+    main(YOLO(), HIDE_WINDOW, WEIGHTS_FILE, TEST_MODE, TEST_OUTPUT, BAYESIAN, int(BATCH_FACTOR), SOURCEDIR_PATH + vid_name, progress_recorder)
+
+    # file_paths = glob.glob(SOURCEDIR_PATH + "*.mp4")
+    # print('\nDiscovered files:')
+    # for file in file_paths:
+    #     print(file)
         
-    for video_path in file_paths:
-        print(f'Processing: {video_path}\n')
-        main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian, int(args.batch_factor), video_path)
+    # for video_path in file_paths:
+    #     print(f'Processing: {video_path}\n')
+    #     #main(YOLO(), args.hide_window, args.weights_file, args.test_mode, args.test_output, args.bayesian, int(args.batch_factor), video_path)
+    #     main(YOLO(), HIDE_WINDOW, WEIGHTS_FILE, TEST_MODE, TEST_OUTPUT, BAYESIAN, int(BATCH_FACTOR), video_path)

@@ -1,0 +1,90 @@
+
+{% load static %}
+<html>
+    <head>
+        <link rel="stylesheet" href="{% static 'style.css' %}" />
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/afterglowplayer@1.x"></script>
+
+
+        <!-- Font Awesome JS -->
+            <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+            <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+
+            <script src="{% static 'js/jquery-3.4.1.min.js' %}"></script>
+            <script src="{% static 'js/main.js' %}"></script>
+            <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+
+
+
+
+            <link href="https://fonts.googleapis.com/css?family=Share+Tech&display=swap" rel="stylesheet">
+        <title> CS407 DroneTrackerz Web App</title>
+    </head>
+    <body >
+      <div class="container">
+        <div class="wrapper">
+          <span class="text-center d-block" id="page_title">CS407: DroneTrackerz</span>
+          <span class="text-center d-block" id="title_caption">A Tool to Identify People and Their Actions in Drone Footage</span>
+          <div class="videowrapper" id = "video_div">
+
+            <!-- Progress Bar! -->
+            <div class='progress-wrapper'>
+                <div id='progress-bar' class='progress-bar' style="background-color: #68a9ef; width: 0%;">&nbsp;</div>
+            </div>
+            <div id="progress-bar-message">Waiting for progress to start...</div>
+            <div id="celery-result"></div>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    var progressUrl = "{% url 'celery_progress:task_status' task_id %}";
+                    CeleryProgressBar.initProgressBar(progressUrl, {onSuccess : addVideoSrc, pollInterval : 2000});
+                });
+            </script>
+            <!-- End of Progress Bar! -->
+
+          </div>
+
+        </div>
+      </div>
+
+      <script>
+        function addVideoSrc(){
+
+          console.log("Hello this is adding video source!");
+
+          // Access video_div, get its width and height
+
+
+          // Create new video element of the appropriate dimensions - string?
+          var new_vid = document.createElement('video');
+          new_vid.class = "afterglow edited_footage";
+          new_vid.id = "video_player";
+          new_vid.width = "1108";
+          new_vid.height = "625";
+          
+          // Append new video element to video_div
+          //document.body.appendChild(new_vid)
+          var vid_div = document.getElementById("video_div");
+          vid_div.appendChild(new_vid);
+
+          // Create source for new video element
+          var new_src = document.createElement('source');
+          // new_src.src = "/static/edited_videoMP4STATIC.mp4";
+          // new_src.type = "video/mp4";
+          new_src.src = "/static/output.mp4"; // avi
+          new_src.type = "video/mp4"; // x-msvideo
+          
+
+          // Append source to new video element
+          new_vid.appendChild(new_src);
+      
+          // Autoplay video; done last for safety
+          new_vid.autoplay = "autoplay"
+        }
+      </script>
+
+    </body>
+
+</html>
