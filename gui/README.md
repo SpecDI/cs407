@@ -6,13 +6,17 @@
  - Celery (V4.4.2)
  - CeleryProgress (V0.0.9)
  - Redis (3.4.1)
+ - Eventlet (Windows)
 
 ## How to run
 
  - Install the above dependencies
+ - Ensure that "_5_5_TransferLSTM_TS.hdf5" is in action_recognition/architectures/weights
+ - Ensure that "yolo.h5" is in object_detection/model_data
  - Navigate to gui/webapp
  - Run: python manage.py runserver
  - In a separate Terminal window, navigate to the root level of the repo (i.e. same level as pipeline) and run: celery -A pipelineNewAsync worker --loglevel=info
+ - If Windows: celery -A pipelineNewAsync worker --loglevel=info -P eventlet
  - In your browser, go to http://127.0.0.1:8000/drone/
  - Upload the desired (mp4) video and enjoy
 
